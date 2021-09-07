@@ -1,23 +1,53 @@
-import logo from './logo.svg';
-import './App.css';
+import Header from './components/Header';
+import LoginForm from './components/LoginForm';
+
+import {useState} from "react";
+import axios from "./http-common";
 
 function App() {
+
+  const [name, setName] = useState("")
+  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState("")
+  const [isAdmin, setIsAdmin] = useState("")
+
+  const getUser = () => {
+    console.log(name);
+
+    axios.post('http://localhost:3001/api/users', {
+      
+      name: name,
+      password: password,
+      email: email,
+      isAdmin: isAdmin
+    })
+    
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Header />
+      {/* <LoginForm onSubmit={getUser}/> */}
+      <form>
+            <div className="form-inner">
+                <h2>Login</h2>
+                
+                <div className="form-group">
+                    <label htmlFor="name">Name:</label>
+                    <input type="text" name="name" id="name" onChange={(event) => setName(event.target.value)}></input>
+                </div>
+                <div className="form-group">
+                    <label htmlFor="email">Email:</label>
+                    <input type="text" name="email" id="email" onChange={(event) => setEmail(event.target.value)}></input>
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Password:</label>
+                    <input type="password" name="password" id="password"  onChange={(event) => setPassword(event.target.value)}></input>
+                </div>
+                <button onClick ={getUser}>Create account</button>
+
+            </div>
+        </form>
     </div>
   );
 }
