@@ -15,6 +15,7 @@ const app = firebase.initializeApp(firebaseConfig);
 const auth = app.auth();
 const db = app.firestore();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
+
 const signInWithGoogle = async () => {
   try {
     const res = await auth.signInWithPopup(googleProvider);
@@ -55,7 +56,7 @@ const registerWithEmailAndPassword = async (name, email, password) => {
       name,
       authProvider: "local",
       email,
-    });
+    })
   } catch (err) {
     console.error(err);
     alert(err.message);
@@ -71,6 +72,7 @@ const sendPasswordResetEmail = async (email) => {
     alert(err.message);
   }
 };
+
 const logout = () => {
   auth.signOut();
 };

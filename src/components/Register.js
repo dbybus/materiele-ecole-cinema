@@ -1,25 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Link, useHistory } from "react-router-dom";
-import {
-  auth,
-  registerWithEmailAndPassword,
-  signInWithGoogle,
-} from "./firebase";
-import "./css/Register.css";
+import { auth, db, userFirebase, registerWithEmailAndPassword, signInWithGoogle, } from "../firebase";
+import "../css/Register.css";
+import UserDataService from "../services/user.service";
+import {RoleEnum} from "../components/common";
+import axios from "../http-common";
+const {currentUser} = auth;
+
+
 function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [user, loading, error] = useAuthState(auth);
   const history = useHistory();
+ 
   const register = () => {
     if (!name) alert("Please enter name");
+    
     registerWithEmailAndPassword(name, email, password);
   };
+
   useEffect(() => {
     if (loading) return;
-    if (user) history.replace("/dashboard");
+    if (user){
+      let data = {
+        name: name,
+        email: email,
+        firebase_uid: user.uid,
+        role: RoleEnum.Admin, //temporary static variable to be changed
+      };
+
+      UserDataService.create(data)
+      .then(() => {
+        console.log("Created new user successfully!");
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+      
+      history.replace("/dashboard");
+    } 
   }, [user, loading]);
   return (
     <div className="register">

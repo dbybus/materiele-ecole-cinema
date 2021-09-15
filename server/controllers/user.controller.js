@@ -14,9 +14,9 @@ exports.create = (req, res) => {
       // Create a User
       const user = {
         name: req.body.name,
-        password: req.body.password,
         email: req.body.email,
-        isAdmin: req.body.isAdmin,
+        firebase_uid: req.body.firebase_uid,
+        role: req.body.role
       };
     
       // Save User in the database

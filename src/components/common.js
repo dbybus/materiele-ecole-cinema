@@ -1,0 +1,1 @@
+export const RoleEnum = { Admin: '0', Editor: '1', Reader: '3'};

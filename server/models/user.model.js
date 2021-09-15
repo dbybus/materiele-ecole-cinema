@@ -3,16 +3,16 @@ module.exports = (sequelize, Sequelize) => {
       name: {
         type: Sequelize.STRING
       },
-      password: {
-        type: Sequelize.STRING
-      },
       email: {
         type: Sequelize.STRING
       },
-      isAdmin: {
-        type: Sequelize.BOOLEAN
+      firebase_uid: {
+        type: Sequelize.STRING
+      },
+      role: {
+        type: Sequelize.STRING
       }
     });
-  
+
     return User;
-  };
+};
