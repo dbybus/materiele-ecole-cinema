@@ -1,5 +1,5 @@
 const db = require("../models");
-const User = db.users;
+const Materiele = db.materiele;
 const Op = db.Sequelize.Op;
 
 // Create and Save a new user
@@ -12,22 +12,28 @@ exports.create = (req, res) => {
       }
     
       // Create a User
-      const user = {
+      const material = {
         name: req.body.name,
-        email: req.body.email,
-        firebase_uid: req.body.firebase_uid,
-        role: req.body.role
+        reference: req.body.reference,
+        image: req.body.image,
+        quantite: req.body.quantite,
+        categorie: req.body.categorie,
+        tarif: req.body.tarif,
+        valeur: req.body.valeur,
+        lieu: req.body.lieu,
+        faculte: req.body.faculte,
+        achete: req.body.achete,
       };
     
       // Save User in the database
-      User.create(user)
+      Materiele.create(material)
         .then(data => {
           res.send(data);
         })
         .catch(err => {
           res.status(500).send({
             message:
-              err.message || "Some error occurred while creating the Tutorial."
+              err.message || "Some error occurred while creating the Material."
           });
         });
 };
@@ -37,14 +43,14 @@ exports.findAll = (req, res) => {
     const name = req.query.name;
     var condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
   
-    User.findAll({ where: condition })
+    Materiele.findAll({ where: condition })
       .then(data => {
         res.send(data);
       })
       .catch(err => {
         res.status(500).send({
           message:
-            err.message || "Some error occurred while retrieving tutorials."
+            err.message || "Some error occurred while retrieving materials."
         });
       });
 };
@@ -53,13 +59,13 @@ exports.findAll = (req, res) => {
 exports.findOne = (req, res) => {
     const id = req.params.id;
 
-    User.findByPk(id)
+    Materiele.findByPk(id)
       .then(data => {
         res.send(data);
       })
       .catch(err => {
         res.status(500).send({
-          message: "Error retrieving Tutorial with id=" + id
+          message: "Error retrieving Material with id=" + id
         });
       });
 };
@@ -68,13 +74,13 @@ exports.findOne = (req, res) => {
 exports.update = (req, res) => {
     const id = req.params.id;
 
-    User.update(req.body, {
+    Materiele.update(req.body, {
       where: { id: id }
     })
       .then(num => {
         if (num == 1) {
           res.send({
-            message: "Tutorial was updated successfully."
+            message: "Material was updated successfully."
           });
         } else {
           res.send({
@@ -84,7 +90,7 @@ exports.update = (req, res) => {
       })
       .catch(err => {
         res.status(500).send({
-          message: "Error updating Tutorial with id=" + id
+          message: "Error updating Material with id=" + id
         });
       });
 };
@@ -93,45 +99,40 @@ exports.update = (req, res) => {
 exports.delete = (req, res) => {
     const id = req.params.id;
 
-    User.destroy({
+    Materiele.destroy({
       where: { id: id }
     })
       .then(num => {
         if (num == 1) {
           res.send({
-            message: "Tutorial was deleted successfully!"
+            message: "Material was deleted successfully!"
           });
         } else {
           res.send({
-            message: `Cannot delete Tutorial with id=${id}. Maybe Tutorial was not found!`
+            message: `Cannot delete Material with id=${id}. Maybe Tutorial was not found!`
           });
         }
       })
       .catch(err => {
         res.status(500).send({
-          message: "Could not delete Tutorial with id=" + id
+          message: "Could not delete Material with id=" + id
         });
       });
 };
 
 // Delete all Tutorials from the database.
 exports.deleteAll = (req, res) => {
-    User.destroy({
+  Materiele.destroy({
         where: {},
         truncate: false
       })
         .then(nums => {
-          res.send({ message: `${nums} Tutorials were deleted successfully!` });
+          res.send({ message: `${nums} Material were deleted successfully!` });
         })
         .catch(err => {
           res.status(500).send({
             message:
-              err.message || "Some error occurred while removing all tutorials."
+              err.message || "Some error occurred while removing all material."
           });
         });
-};
-
-// Find all published Tutorials
-exports.findAllPublished = (req, res) => {
-  
 };

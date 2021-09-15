@@ -20,6 +20,7 @@ db.sequelize.sync();
 app.use(bodyParser.urlencoded({ extended: true }));
 
 require("./server/routes/user.routes")(app);
+require("./server/routes/materiele.routes")(app);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 3001;

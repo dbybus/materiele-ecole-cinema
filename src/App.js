@@ -7,6 +7,8 @@ import Register from './components/Register';
 import Reset from './components/Reset';
 import Dashboard from './components/Dashboard';
 import "./css/Login.css";
+import NavBar from './components/NavBar';
+import AddMateriele from './components/AddMateriele';
 
 function App() {
 
@@ -29,13 +31,14 @@ function App() {
 
   return (
     <div className="app">
-      <Header />
+      <NavBar />
       <Router>
         <Switch>
           <Route exact path="/" component={Login} />
           <Route exact path="/register" component={Register} />
           <Route exact path="/reset" component={Reset} />
           <Route exact path="/dashboard" component={Dashboard} />
+          <Route exact path="/addmateriele" component={AddMateriele} />
         </Switch>
       </Router>
     </div>  
