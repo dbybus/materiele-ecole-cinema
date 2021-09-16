@@ -5,6 +5,8 @@ import App from './App';
 import { BrowserRouter } from "react-router-dom";
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import "react-datepicker/dist/react-datepicker.css";
+import 'react-agenda/build/styles.css';
+import 'react-datetime/css/react-datetime.css';
 
 ReactDOM.render(
   <BrowserRouter>

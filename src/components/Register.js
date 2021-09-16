@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Link, useHistory } from "react-router-dom";
-import { auth, db, userFirebase, registerWithEmailAndPassword, signInWithGoogle, } from "../firebase";
+import { auth, registerWithEmailAndPassword, signInWithGoogle, } from "../firebase";
 import "../css/Register.css";
 import UserDataService from "../services/user.service";
 import {RoleEnum} from "../components/common";
-import axios from "../http-common";
-const {currentUser} = auth;
-
 
 function Register() {
   const [email, setEmail] = useState("");

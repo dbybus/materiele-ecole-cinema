@@ -9,6 +9,8 @@ import Dashboard from './components/Dashboard';
 import "./css/Login.css";
 import NavBar from './components/NavBar';
 import AddMateriele from './components/AddMateriele';
+import ListMateriele from './components/ListMateriele';
+import Agenda from './components/Agenda';
 
 function App() {
 
@@ -39,6 +41,8 @@ function App() {
           <Route exact path="/reset" component={Reset} />
           <Route exact path="/dashboard" component={Dashboard} />
           <Route exact path="/addmateriele" component={AddMateriele} />
+          <Route exact path="/listmateriele" component={ListMateriele} />
+          <Route exact path="/agenda" component={Agenda} />
         </Switch>
       </Router>
     </div>  
