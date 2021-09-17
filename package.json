@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
   "dependencies": {
+    "@material-ui/core": "^4.12.3",
+    "@material-ui/icons": "^4.11.2",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.1.0",
     "@testing-library/user-event": "^13.2.1",
@@ -14,6 +16,7 @@
     "firebase": "^9.0.1",
     "firebaseui": "^5.0.0",
     "formik": "^2.2.9",
+    "material-table": "^1.69.3",
     "mdbreact": "^5.1.0",
     "mysql": "^2.18.1",
     "mysql2": "^2.3.0",

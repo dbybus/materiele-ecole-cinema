@@ -4,7 +4,7 @@ const Op = db.Sequelize.Op;
 
 // Create and Save a new user
 exports.create = (req, res) => {
-    if (!req.body.name) {
+    if (!req.body.label) {
         res.status(400).send({
           message: "Content can not be empty!"
         });
@@ -13,18 +13,23 @@ exports.create = (req, res) => {
     
       // Create a User
       const material = {
-        name: req.body.name,
-        reference: req.body.reference,
-        image: req.body.image,
-        quantite: req.body.quantite,
+        label: req.body.label,
+        ref: req.body.ref,
+        //panne: req.body.panne,
+        //externe: req.body.externe,
         categorie: req.body.categorie,
-        tarif: req.body.tarif,
-        valeur: req.body.valeur,
+        //sousCateg: req.body.sousCateg,
+        Qtotale: req.body.Qtotale,
+        tarifLoc: req.body.tarifLoc,
+        valRemp: req.body.valRemp,
+        dateAchat: req.body.dateAchat,
+        //ownerExt: req.body.ownerExt,
+        //remarque: req.body.remarque,
+        degre: req.body.degre,
         lieu: req.body.lieu,
-        faculte: req.body.faculte,
-        achete: req.body.achete,
+
       };
-    
+      
       // Save User in the database
       Materiele.create(material)
         .then(data => {

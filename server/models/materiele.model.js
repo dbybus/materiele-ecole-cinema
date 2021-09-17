@@ -1,38 +1,48 @@
 module.exports = (sequelize, Sequelize) => {
-    const Materiele = sequelize.define("materiele", {
-      name: {
+    const Materiele = sequelize.define("materieles", {
+      label: {
         type: Sequelize.STRING
       },
-      reference: {
+      ref: {
         type: Sequelize.STRING
       },
-      image: {
-        type: Sequelize.BLOB
-      },
-      quantite: {
+      panne: {
         type: Sequelize.INTEGER
+      },
+      externe: {
+        type: Sequelize.BOOLEAN
       },
       categorie: {
         type: Sequelize.STRING
       },
-      tarif: {
+      sousCateg: {
         type: Sequelize.INTEGER
       },
-      valeur: {
+      //quantite
+      Qtotale: {
+        type: Sequelize.INTEGER
+      },
+      tarifLoc: {
+        type: Sequelize.FLOAT
+      },
+      valRemp: {
+        type: Sequelize.FLOAT
+      },
+      dateAchet: {
+        type: Sequelize.DATE
+      },
+      ownerExt: {
+        type: Sequelize.STRING
+      },
+      remarque: {
+        type: Sequelize.TEXT
+      },
+      degre: {
         type: Sequelize.INTEGER
       },
       lieu: {
         type: Sequelize.STRING
-      },
-      faculte: {
-        type: Sequelize.STRING
-      },
-      achete: {
-        type: Sequelize.DATE
-      },
-      reserve: {
-        type: Sequelize.BOOLEAN
-      },
+      }
     });
 
     return Materiele;

@@ -6,16 +6,20 @@ import MaterieleDataService from "../services/materiele.service";
 
 const AddMateriele = () => {
     const [validated, setValidated] = useState(false);
-    const [nom, setNom] = useState("");
-    const [reference, setReference] = useState("");
-    const [image, setImage] = useState("");
-    const [quantite, setQuantite] = useState("");
+    const [label, setLabel] = useState("");
+    const [ref, setRef] = useState("");
+    const [panne, setPanne] = useState(""); //Ajouter plus tard dans view
+    const [sousCateg, setSousCateg] = useState(""); //Ajouter plus tard dans view
+    const [image, setImage] = useState(""); //Gerrer les photo plus tard
+    const [Qtotale, setQtotale] = useState("");
     const [categorie, setCategorie] = useState("");
-    const [tarif, setTarif] = useState("");
-    const [valeur, setValeur] = useState("");
+    const [tarifLoc, setTarifLoc] = useState("");
+    const [valRemp, setValRemp] = useState("");
+    const [dateAchat, setDateAchat] = useState(new Date());
+    const [ownerExt, setOwnerExt] = useState(""); //Ajouter plus tard dans view
+    const [remarque, setRemarque] = useState(""); //Ajouter plus tard dans view
+    const [degre, setDegre] = useState("");
     const [lieu, setLieu] = useState("");
-    const [faculte, setFaculte] = useState("");
-    const [achete, setAchete] = useState(new Date());
 
     const handleSubmit = (event) => {
         const form = event.currentTarget;
@@ -35,24 +39,25 @@ const AddMateriele = () => {
 
     const addNew = () =>{
         let data = {
-            name: nom,
-            reference: reference,
-            image: image,
-            quantite: quantite,
+            label: label,
+            ref: ref,
             categorie: categorie,
-            tarif: tarif,
-            valeur: valeur,
+            Qtotale: Qtotale,
+            tarifLoc: tarifLoc,
+            valRemp: valRemp,
             lieu: lieu,
-            faculte: faculte,
-            achete: achete
+            degre: degre,
+            dateAchat: dateAchat
           };
-    
+          
+          console.log(data.label, data.ref, data.categorie, data.Qtotale, data.tarifLoc, data.valRemp, data.dateAchat, data.degre, data.lieu)
           MaterieleDataService.create(data)
           .then(() => {
             console.log("Created new user successfully!");
           })
           .catch((e) => {
             console.log(e);
+            alert(e)
           });
     }
     return (
@@ -64,20 +69,20 @@ const AddMateriele = () => {
                         <Form.Control
                             required
                             type="text"
-                            value={nom}
-                            onChange={(e) => setNom(e.target.value)}
-                            placeholder="First name"
+                            value={label}
+                            onChange={(e) => setLabel(e.target.value)}
+                            placeholder="First label"
                         />
                         <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
                     </Form.Group>
                     <Form.Group as={Col} md="4" controlId="validationCustom02">
-                        <Form.Label>Reference</Form.Label>
+                        <Form.Label>ref</Form.Label>
                         <Form.Control
                             required
                             type="text"
-                            value={reference}
-                            onChange={(e) => setReference(e.target.value)}
-                            placeholder="Reference"
+                            value={ref}
+                            onChange={(e) => setRef(e.target.value)}
+                            placeholder="ref"
                         />
                         <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
                     </Form.Group>
@@ -99,8 +104,8 @@ const AddMateriele = () => {
                     </Form.Group>
                     
                     <Form.Group as={Col} md="2" controlId="validationCustom04">
-                        <Form.Label>Quantite</Form.Label>
-                        <Form.Control type="text" placeholder="Quantite" value={quantite} onChange={(e) => setQuantite(e.target.value)} required />
+                        <Form.Label>Qtotale</Form.Label>
+                        <Form.Control type="text" placeholder="Qtotale" value={Qtotale} onChange={(e) => setQtotale(e.target.value)} required />
                         <Form.Control.Feedback type="invalid">
                             Please provide a valid state.
                         </Form.Control.Feedback>
@@ -118,15 +123,15 @@ const AddMateriele = () => {
                         </Form.Select>
                     </Form.Group>
                     <Form.Group as={Col} md="2" controlId="validationCustom05" >
-                        <Form.Label>Tarif</Form.Label>
-                        <Form.Control type="text" placeholder="Tarif" value={tarif} onChange={(e) => setTarif(e.target.value)} required />
+                        <Form.Label>tarifLoc</Form.Label>
+                        <Form.Control type="text" placeholder="tarifLoc" value={tarifLoc} onChange={(e) => setTarifLoc(e.target.value)} required />
                         <Form.Control.Feedback type="invalid">
                             Please provide a valid zip.
                         </Form.Control.Feedback>
                     </Form.Group>
                     <Form.Group as={Col} md="2" controlId="validationCustom05">
-                        <Form.Label>Valeur</Form.Label>
-                        <Form.Control type="text" placeholder="Valeur" value={valeur} onChange={(e) => setValeur(e.target.value)} required />
+                        <Form.Label>valRemp</Form.Label>
+                        <Form.Control type="text" placeholder="valRemp" value={valRemp} onChange={(e) => setValRemp(e.target.value)} required />
                         <Form.Control.Feedback type="invalid">
                             Please provide a valid zip.
                         </Form.Control.Feedback>
@@ -141,8 +146,8 @@ const AddMateriele = () => {
                         </Form.Control.Feedback>
                     </Form.Group>
                     <Form.Group as={Col} md="3" controlId="validationCustom03">
-                        <Form.Label>Faculte</Form.Label>
-                        <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={faculte} onChange={(e) => setFaculte(e.target.value)}>
+                        <Form.Label>degre</Form.Label>
+                        <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={degre} onChange={(e) => setDegre(e.target.value)}>
                             <option value="0">Choose...</option>
                             <option value="1">One</option>
                             <option value="2">Two</option>
@@ -151,7 +156,7 @@ const AddMateriele = () => {
                     </Form.Group>
                     <Form.Group as={Col} md="2" controlId="validationCustom03">
                         <Form.Label>Acheté</Form.Label>
-                        <DatePicker selected={achete} onChange={(date) => setAchete(date)} className="form-control"/>
+                        <DatePicker selected={dateAchat} onChange={(date) => setDateAchat(date)} className="form-control"/>
                     </Form.Group>
                     
                 </Row>
