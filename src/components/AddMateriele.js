@@ -47,10 +47,9 @@ const AddMateriele = () => {
             valRemp: valRemp,
             lieu: lieu,
             degre: degre,
-            dateAchat: dateAchat
+            dateAchat: dateAchat,
           };
           
-          console.log(data.label, data.ref, data.categorie, data.Qtotale, data.tarifLoc, data.valRemp, data.dateAchat, data.degre, data.lieu)
           MaterieleDataService.create(data)
           .then(() => {
             console.log("Created new user successfully!");
@@ -60,6 +59,7 @@ const AddMateriele = () => {
             alert(e)
           });
     }
+
     return (
         <Container>
             <Form noValidate validated={validated} onSubmit={handleSubmit}>

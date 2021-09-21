@@ -16,10 +16,11 @@ import Remove from '@material-ui/icons/Remove';
 import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
+import {Container} from 'react-bootstrap'
 
 function ListMateriele() {
     const [allMateriele, setAllMateriele] = useState([])
-    
+
     const tableIcons = {
         Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
         Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -43,8 +44,9 @@ function ListMateriele() {
     const getAllMateriele = async () => {
         MaterieleDataService.getAll()
           .then(response => {
+           
             setAllMateriele(response.data);
-            
+
             console.log("Get all materials successfully!");
           })
           .catch((e) => {
@@ -58,22 +60,26 @@ function ListMateriele() {
 
 
     return (
-       
-        <div style={{maxWidth: '75%', display: 'block'}}>
+       <Container>
         <MaterialTable 
           icons={tableIcons}
           
           columns={[
             { title: 'Nom', field: 'label' },
             { title: 'Reference', field: 'ref' },
+            { title: 'Image', field: 'img', render: item => <img src={'/img/'+item.label+'.jpg'} alt="" border="3" height="200" width="200" />},
+            { title: 'Quantite', field: 'Qtotale'},
             { title: 'Category', field: 'categorie'},
-            { title: 'Quantite', field: 'Qtotale'}
+            { title: 'Tarif', field: 'tarifLoc'},
+            { title: 'Valeur', field: 'valRemp'},
+            { title: 'Lieu', field: 'lieu'},
+            { title: 'Degré', field: 'lieu'},
           ]}
-          
           data={allMateriele}
+         
           title="Liste des matériaux"
         />
-      </div>
+      </Container>
     )
 }
 
