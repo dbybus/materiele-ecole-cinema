@@ -40,7 +40,6 @@ function App() {
           <Route exact path="/register" component={Register} />
           <Route exact path="/reset" component={Reset} />
           <Route exact path="/dashboard" component={Dashboard} />
-          <Route exact path="/addmateriele" component={AddMateriele} />
           <Route exact path="/listmateriele" component={ListMateriele} />
           <Route exact path="/agenda" component={Agenda} />
         </Switch>

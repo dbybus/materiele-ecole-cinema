@@ -17,9 +17,12 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
+import AddMateriele from './AddMateriele';
+import ModalPopup from './ModalPopup';
 
 function ListMateriele() {
     const [allMateriele, setAllMateriele] = useState([])
+    const [openPopup, setOpenPopup] = useState(false)
 
     const tableIcons = {
         Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -76,10 +79,49 @@ function ListMateriele() {
             { title: 'Degré', field: 'lieu'},
           ]}
           data={allMateriele}
-         
+          
+          actions={[
+            {
+              icon: () => <AddBox style={{color: 'blue'}}/>,
+              tooltip: 'Ajoute nouveau materiel',
+              isFreeAction: true,
+              onClick: () => {
+                setOpenPopup(true)
+                console.log("Clicked")
+              }
+            }
+          ]}
+          editable={{
+            onRowUpdate: (newData, oldData) =>
+              new Promise((resolve, reject) => {
+                setTimeout(() => {
+                  const dataUpdate = [...allMateriele];
+                  const index = oldData.tableData.id;
+                  dataUpdate[index] = newData;
+                  setAllMateriele([...dataUpdate]);
+    
+                  resolve();
+                }, 1000)
+              }),
+            onRowDelete: oldData =>
+              new Promise((resolve, reject) => {
+                setTimeout(() => {
+                  const dataDelete = [...allMateriele];
+                  const index = oldData.tableData.id;
+                  dataDelete.splice(index, 1);
+                  setAllMateriele([...dataDelete]);
+    
+                  resolve();
+                }, 1000)
+              }),
+          }}
           title="Liste des matériaux"
         />
+        <ModalPopup title="Ajoute nouveau materiel" openPopup={openPopup} setOpenPopup={setOpenPopup}>
+          <AddMateriele></AddMateriele>
+        </ModalPopup>
       </Container>
+      
     )
 }
 

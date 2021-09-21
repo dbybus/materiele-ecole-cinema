@@ -64,25 +64,25 @@ const AddMateriele = () => {
         <Container>
             <Form noValidate validated={validated} onSubmit={handleSubmit}>
                 <Row className="mb-3">
-                    <Form.Group as={Col} md="4" controlId="validationCustom01">
+                    <Form.Group as={Col} md="6" controlId="validationCustom01">
                         <Form.Label>Nom</Form.Label>
                         <Form.Control
                             required
                             type="text"
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
-                            placeholder="First label"
+                            placeholder="Nom"
                         />
                         <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
                     </Form.Group>
-                    <Form.Group as={Col} md="4" controlId="validationCustom02">
-                        <Form.Label>ref</Form.Label>
+                    <Form.Group as={Col} md="6" controlId="validationCustom02">
+                        <Form.Label>Reference</Form.Label>
                         <Form.Control
                             required
                             type="text"
                             value={ref}
                             onChange={(e) => setRef(e.target.value)}
-                            placeholder="ref"
+                            placeholder="Reference"
                         />
                         <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
                     </Form.Group>
@@ -103,9 +103,9 @@ const AddMateriele = () => {
                         </Form.Control.Feedback> */}
                     </Form.Group>
                     
-                    <Form.Group as={Col} md="2" controlId="validationCustom04">
-                        <Form.Label>Qtotale</Form.Label>
-                        <Form.Control type="text" placeholder="Qtotale" value={Qtotale} onChange={(e) => setQtotale(e.target.value)} required />
+                    <Form.Group as={Col} md="6" controlId="validationCustom04">
+                        <Form.Label>Quantite</Form.Label>
+                        <Form.Control type="text" placeholder="Quantite" value={Qtotale} onChange={(e) => setQtotale(e.target.value)} required />
                         <Form.Control.Feedback type="invalid">
                             Please provide a valid state.
                         </Form.Control.Feedback>
@@ -122,31 +122,31 @@ const AddMateriele = () => {
                             <option value="3">Three</option>
                         </Form.Select>
                     </Form.Group>
-                    <Form.Group as={Col} md="2" controlId="validationCustom05" >
-                        <Form.Label>tarifLoc</Form.Label>
-                        <Form.Control type="text" placeholder="tarifLoc" value={tarifLoc} onChange={(e) => setTarifLoc(e.target.value)} required />
+                    <Form.Group as={Col} md="4" controlId="validationCustom05" >
+                        <Form.Label>Tarif</Form.Label>
+                        <Form.Control type="text" placeholder="Tarif" value={tarifLoc} onChange={(e) => setTarifLoc(e.target.value)} required />
                         <Form.Control.Feedback type="invalid">
                             Please provide a valid zip.
                         </Form.Control.Feedback>
                     </Form.Group>
-                    <Form.Group as={Col} md="2" controlId="validationCustom05">
-                        <Form.Label>valRemp</Form.Label>
-                        <Form.Control type="text" placeholder="valRemp" value={valRemp} onChange={(e) => setValRemp(e.target.value)} required />
+                    <Form.Group as={Col} md="4" controlId="validationCustom05">
+                        <Form.Label>Valeur</Form.Label>
+                        <Form.Control type="text" placeholder="Valeur" value={valRemp} onChange={(e) => setValRemp(e.target.value)} required />
                         <Form.Control.Feedback type="invalid">
                             Please provide a valid zip.
                         </Form.Control.Feedback>
                     </Form.Group>
                 </Row>
                 <Row className="mb-3">
-                    <Form.Group as={Col} md="3" controlId="validationCustom05">
+                    <Form.Group as={Col} md="4" controlId="validationCustom05">
                         <Form.Label>Lieu</Form.Label>
                         <Form.Control type="text" placeholder="Lieu" required value={lieu} onChange={(e) => setLieu(e.target.value)}/>
                         <Form.Control.Feedback type="invalid">
                             Please provide a valid zip.
                         </Form.Control.Feedback>
                     </Form.Group>
-                    <Form.Group as={Col} md="3" controlId="validationCustom03">
-                        <Form.Label>degre</Form.Label>
+                    <Form.Group as={Col} md="4" controlId="validationCustom03">
+                        <Form.Label>Dégre</Form.Label>
                         <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={degre} onChange={(e) => setDegre(e.target.value)}>
                             <option value="0">Choose...</option>
                             <option value="1">One</option>
@@ -154,7 +154,7 @@ const AddMateriele = () => {
                             <option value="3">Three</option>
                         </Form.Select>
                     </Form.Group>
-                    <Form.Group as={Col} md="2" controlId="validationCustom03">
+                    <Form.Group as={Col} md="4" controlId="validationCustom03">
                         <Form.Label>Acheté</Form.Label>
                         <DatePicker selected={dateAchat} onChange={(date) => setDateAchat(date)} className="form-control"/>
                     </Form.Group>
