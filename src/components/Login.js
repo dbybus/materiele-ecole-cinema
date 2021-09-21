@@ -8,13 +8,16 @@ function Login() {
   const [password, setPassword] = useState("");
   const [user, loading, error] = useAuthState(auth);
   const history = useHistory();
+  
   useEffect(() => {
     if (loading) {
       // maybe trigger a loading screen
       return;
     }
+
     if (user) history.replace("/dashboard");
   }, [user, loading]);
+  
   return (
     <div className="login">
       <div className="login__container">
@@ -51,4 +54,5 @@ function Login() {
     </div>
   );
 }
+
 export default Login;

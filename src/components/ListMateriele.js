@@ -63,7 +63,7 @@ function ListMateriele() {
 
 
     return (
-       <Container>
+      <Container>
         <MaterialTable 
           icons={tableIcons}
           
@@ -117,8 +117,9 @@ function ListMateriele() {
           }}
           title="Liste des matériaux"
         />
+
         <ModalPopup title="Ajoute nouveau materiel" openPopup={openPopup} setOpenPopup={setOpenPopup}>
-          <AddMateriele></AddMateriele>
+          <AddMateriele />
         </ModalPopup>
       </Container>
       
