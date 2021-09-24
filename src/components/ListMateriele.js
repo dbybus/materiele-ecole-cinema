@@ -76,7 +76,7 @@ function ListMateriele() {
             { title: 'Tarif', field: 'tarifLoc'},
             { title: 'Valeur', field: 'valRemp'},
             { title: 'Lieu', field: 'lieu'},
-            { title: 'Degré', field: 'lieu'},
+            { title: 'Degré', field: 'degre'},
           ]}
           data={allMateriele}
           

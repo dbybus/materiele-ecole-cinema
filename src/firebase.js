@@ -39,12 +39,21 @@ const signInWithGoogle = async () => {
 };
 
 const signInWithEmailAndPassword = async (email, password) => {
-  try {
-    await auth.signInWithEmailAndPassword(email, password);
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
+  
+  await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .then(() => {
+  // Existing and future Auth states are now persisted in the current
+  // session only. Closing the window would clear any existing state even
+  // if a user forgets to sign out.
+  // ...
+  // New sign-in will be persisted with session persistence.
+    return auth.signInWithEmailAndPassword(email, password);
+  })
+  .catch((error) => {
+    // Handle Errors here.
+    console.log(error.code);
+    alert(error.message);
+  });
 };
 
 const registerWithEmailAndPassword = async (name, email, password) => {

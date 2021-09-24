@@ -30,7 +30,7 @@ function Dashboard() {
     <div className="dashboard">
       <div className="dashboard__container">
         Logged in as
-        <div>{name}</div>
+        {/* <div>{name}</div> */}
         <div>{user?.email}</div>
         <div>{user?.uid}</div>
         <button className="dashboard__btn" onClick={logout}>
