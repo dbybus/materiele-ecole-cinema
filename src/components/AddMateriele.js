@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import {Form, Button, Row, Col, Container} from 'react-bootstrap'
 import DatePicker from 'react-datepicker'
 import MaterieleDataService from "../services/materiele.service";
+import axios from "axios";
 /* import { DatePicker } from 'react-bootstrap-date-picker' */
 
 const AddMateriele = () => {
@@ -20,6 +21,7 @@ const AddMateriele = () => {
     const [remarque, setRemarque] = useState(""); //Ajouter plus tard dans view
     const [degre, setDegre] = useState("");
     const [lieu, setLieu] = useState("");
+    const [url_pic, setUrl_Pic] = useState("");
 
     const handleSubmit = (event) => {
         const form = event.currentTarget;
@@ -31,10 +33,10 @@ const AddMateriele = () => {
         else
         {
             addNew();
+            addImage();
         }
 
         setValidated(true);
-        
     };
 
     const addNew = () =>{
@@ -48,17 +50,40 @@ const AddMateriele = () => {
             lieu: lieu,
             degre: degre,
             dateAchat: dateAchat,
-          };
+            url_pic: url_pic
+        };
           
-          MaterieleDataService.create(data)
-          .then(() => {
-            console.log("Created new user successfully!");
-          })
-          .catch((e) => {
+        MaterieleDataService.create(data)
+        .then(() => {
+        console.log("Created new user successfully!");
+        })
+        .catch((e) => {
+        console.log(e);
+        alert(e)
+        });
+    }
+
+    const onChangePicture = e => {
+        setImage(e.target.files[0])
+        setUrl_Pic('/img/materiels/'+e.target.files[0].name)
+    };
+
+    const addImage = () =>{
+        const formData = new FormData();
+        
+        formData.append('file', image);
+        axios.post('http://localhost:3001/api/materiele/upload', formData, {
+            headers:{
+                'content-type': 'multipart/form-data'
+              }
+        }).then(result => {
+            // Handle result…
+            console.log(result.data);
+        }).catch((e) => {
             console.log(e);
             alert(e)
           });
-    }
+    } 
 
     return (
         <Container>
@@ -94,10 +119,11 @@ const AddMateriele = () => {
                             type="file"
                             required
                             name="file"
-                            value={image}
-                            onChange={(e) => setImage(e.target.value)}
+                            //value={image}
+                            onChange={onChangePicture}
                             /* isInvalid={!!errors.file} */
                         />
+                        <Form.Control type="hidden" value={url_pic} />
                         {/* <Form.Control.Feedback type="invalid" tooltip>
                         {errors.file}
                         </Form.Control.Feedback> */}

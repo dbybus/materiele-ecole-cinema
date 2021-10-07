@@ -20,6 +20,10 @@ module.exports = app => {
   
     // Delete all Tutorials
     router.delete("/", materiele.deleteAll);
+
+    router.post("/upload", materiele.upload);
+    router.get("/files", materiele.getListFiles);
+    router.get("/files/:name", materiele.download);
   
     app.use('/api/materiele', router);
   };

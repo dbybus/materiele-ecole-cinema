@@ -1,6 +1,7 @@
 const db = require("../models");
 const Materiele = db.materiele;
 const Op = db.Sequelize.Op;
+const uploadFile = require("../middlewareUploads");
 
 // Create and Save a new user
 exports.create = (req, res) => {
@@ -10,7 +11,6 @@ exports.create = (req, res) => {
         });
         return;
       }
-    
       // Create a User
       const material = {
         label: req.body.label,
@@ -27,6 +27,7 @@ exports.create = (req, res) => {
         //remarque: req.body.remarque,
         degre: req.body.degre,
         lieu: req.body.lieu,
+        url_pic: req.body.url_pic
 
       };
       
@@ -140,4 +141,61 @@ exports.deleteAll = (req, res) => {
               err.message || "Some error occurred while removing all material."
           });
         });
+};
+
+
+//#region IMAGE handelling
+
+exports.upload = async (req, res) => {
+  try {
+    await uploadFile(req, res);
+
+    if (req.file == undefined) {
+      return res.status(400).send({ message: "Please upload a file!" });
+    }
+
+    res.status(200).send({
+      message: "Uploaded the file successfully: " + req.file.originalname,
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: `Could not upload the file: ${req.file.originalname}. ${err}`,
+    });
+  }
+};
+
+exports.getListFiles = (req, res) => {
+  const directoryPath = __basedir + "/public/img/materiels/";
+
+  fs.readdir(directoryPath, function (err, files) {
+    if (err) {
+      res.status(500).send({
+        message: "Unable to scan files!",
+      });
+    }
+
+    let fileInfos = [];
+
+    files.forEach((file) => {
+      fileInfos.push({
+        name: file,
+        url: baseUrl + file,
+      });
+    });
+
+    res.status(200).send(fileInfos);
+  });
+};
+
+exports.download = (req, res) => {
+  const fileName = req.params.name;
+  const directoryPath = __basedir + "/public/img/materiels/";
+
+  res.download(directoryPath + fileName, fileName, (err) => {
+    if (err) {
+      res.status(500).send({
+        message: "Could not download the file. " + err,
+      });
+    }
+  });
 };

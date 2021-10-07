@@ -42,6 +42,9 @@ module.exports = (sequelize, Sequelize) => {
       },
       lieu: {
         type: Sequelize.STRING
+      },
+      url_pic: {
+        type: Sequelize.STRING
       }
     });
 

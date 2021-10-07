@@ -28,6 +28,21 @@ class MaterieleDataService {
   findByTitle(name) {
     return http.get(`/materiele?name=${name}`);
   }
+
+  //Not woriking upload getFiles image through the services to see how resolve it later / giving the error
+  //for the moment I am using axios directly
+  upload(file) {
+    console.log(file);
+    return http.post('/materiele', file, {
+      headers:{
+        'content-type': 'multipart/form-data'
+      }
+    });
+  }
+
+  getFiles() {
+    return http.get("/materiele");
+  }
 }
 
 export default new MaterieleDataService();

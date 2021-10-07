@@ -23,7 +23,7 @@ import ModalPopup from './ModalPopup';
 function ListMateriele() {
     const [allMateriele, setAllMateriele] = useState([])
     const [openPopup, setOpenPopup] = useState(false)
-
+   
     const tableIcons = {
         Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
         Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -70,7 +70,7 @@ function ListMateriele() {
           columns={[
             { title: 'Nom', field: 'label' },
             { title: 'Reference', field: 'ref' },
-            { title: 'Image', field: 'img', render: item => <img src={'/img/'+item.label+'.jpg'} alt="" border="3" height="200" width="200" />},
+            { title: 'Image', field: 'img', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />},
             { title: 'Quantite', field: 'Qtotale'},
             { title: 'Category', field: 'categorie'},
             { title: 'Tarif', field: 'tarifLoc'},
