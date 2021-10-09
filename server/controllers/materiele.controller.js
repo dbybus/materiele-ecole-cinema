@@ -2,6 +2,7 @@ const db = require("../models");
 const Materiele = db.materiele;
 const Op = db.Sequelize.Op;
 const uploadFile = require("../middlewareUploads");
+const fs = require("fs")
 
 // Create and Save a new user
 exports.create = (req, res) => {
@@ -146,7 +147,7 @@ exports.deleteAll = (req, res) => {
 
 //#region IMAGE handelling
 
-exports.upload = async (req, res) => {
+exports.uploadImgMat = async (req, res) => {
   try {
     await uploadFile(req, res);
 
@@ -198,4 +199,31 @@ exports.download = (req, res) => {
       });
     }
   });
+};
+
+
+exports.deleteImgMat = (req, res) => {
+  console.log(req.body.url_pic)
+    
+  try {
+    if (req.body == undefined || req.body.url_pic === '') {
+      return res.status(400).send({ message: "Please upload a file!" });
+    }
+
+    fs.unlink("./public"+req.body.url_pic, (err) => {
+      if (err) {
+        res.status(500).send({
+          message: "Could not delete the file. " + err,
+        });
+      }  
+    });
+
+    res.status(200).send({
+      message: "deleteted the file successfully: " + req.body.url_pic,
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: `Could not delete the file: ${req.body.url_pic}. ${err}`,
+    });
+  }
 };

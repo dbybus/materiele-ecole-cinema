@@ -1,4 +1,4 @@
-import React, { useEffect, useState, forwardRef } from 'react'
+import React, { useEffect, useState, forwardRef, Ima } from 'react'
 import MaterieleDataService from "../services/materiele.service";
 import MaterialTable from 'material-table'
 import AddBox from '@material-ui/icons/AddBox';
@@ -61,7 +61,6 @@ function ListMateriele() {
         getAllMateriele();
     },[])
 
-
     return (
       <Container>
         <MaterialTable 
@@ -70,7 +69,7 @@ function ListMateriele() {
           columns={[
             { title: 'Nom', field: 'label' },
             { title: 'Reference', field: 'ref' },
-            { title: 'Image', field: 'img', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />},
+            { title: 'Image', field: 'image', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />},
             { title: 'Quantite', field: 'Qtotale'},
             { title: 'Category', field: 'categorie'},
             { title: 'Tarif', field: 'tarifLoc'},
@@ -97,6 +96,8 @@ function ListMateriele() {
                 setTimeout(() => {
                   const dataUpdate = [...allMateriele];
                   const index = oldData.tableData.id;
+                  MaterieleDataService.update(dataUpdate[index].id, newData);
+
                   dataUpdate[index] = newData;
                   setAllMateriele([...dataUpdate]);
     
@@ -108,9 +109,19 @@ function ListMateriele() {
                 setTimeout(() => {
                   const dataDelete = [...allMateriele];
                   const index = oldData.tableData.id;
+
+                  //Delete material from db
+                  MaterieleDataService.delete(dataDelete[index].id);
+
+                  let data ={
+                    url_pic: dataDelete[index].url_pic
+                  }
+
+                  MaterieleDataService.deleteImgMat(data);
+
                   dataDelete.splice(index, 1);
                   setAllMateriele([...dataDelete]);
-    
+
                   resolve();
                 }, 1000)
               }),

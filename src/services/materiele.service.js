@@ -2,46 +2,58 @@ import http from "../http-common";
 
 class MaterieleDataService {
   getAll() {
-    return http.get("/materiele");
+    return http.get("/materiele/findAll");
   }
 
   get(id) {
-    return http.get(`/materiele/${id}`);
+    return http.get(`/materiele/findOne/${id}`);
   }
 
   create(data) {
-    return http.post("/materiele", data);
+    return http.post("/materiele/create", data);
   }
 
   update(id, data) {
-    return http.put(`/materiele/${id}`, data);
+    return http.put(`/materiele/update/${id}`, data);
   }
 
   delete(id) {
-    return http.delete(`/materiele/${id}`);
+    return http.delete(`/materiele/delete/${id}`);
   }
 
   deleteAll() {
-    return http.delete(`/materiele`);
+    return http.delete(`/materiele/deleteAll`);
   }
 
-  findByTitle(name) {
-    return http.get(`/materiele?name=${name}`);
-  }
-
-  //Not woriking upload getFiles image through the services to see how resolve it later / giving the error
-  //for the moment I am using axios directly
-  upload(file) {
+  async uploadImgMat(file) {
     console.log(file);
-    return http.post('/materiele', file, {
+    return http.post('/materiele/uploadImgMat', file, {
       headers:{
-        'content-type': 'multipart/form-data'
+        'content-type': 'multipart/form-data',
+        "Access-Control-Allow-Origin": "*",
+        'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',
       }
+    }).then(result => {
+        // Handle result…
+        console.log(result.data);
+    }).catch((e) => {
+        console.log(e.result.data);
+        alert(e)
     });
   }
 
   getFiles() {
     return http.get("/materiele");
+  }
+
+  deleteImgMat(data) {
+    return http.post('/materiele/deleteImgMat', data, {
+      headers:{
+        'Content-Type': 'application/json',
+        "Access-Control-Allow-Origin": "*",
+        'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',
+      }
+    });
   }
 }
 

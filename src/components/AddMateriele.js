@@ -2,7 +2,6 @@ import React, {useState} from 'react'
 import {Form, Button, Row, Col, Container} from 'react-bootstrap'
 import DatePicker from 'react-datepicker'
 import MaterieleDataService from "../services/materiele.service";
-import axios from "axios";
 /* import { DatePicker } from 'react-bootstrap-date-picker' */
 
 const AddMateriele = () => {
@@ -68,21 +67,12 @@ const AddMateriele = () => {
         setUrl_Pic('/img/materiels/'+e.target.files[0].name)
     };
 
-    const addImage = () =>{
-        const formData = new FormData();
+    const addImage = async () =>{
         
+        const formData = new FormData();
         formData.append('file', image);
-        axios.post('http://localhost:3001/api/materiele/upload', formData, {
-            headers:{
-                'content-type': 'multipart/form-data'
-              }
-        }).then(result => {
-            // Handle result…
-            console.log(result.data);
-        }).catch((e) => {
-            console.log(e);
-            alert(e)
-          });
+    
+        MaterieleDataService.uploadImgMat(formData)
     } 
 
     return (
