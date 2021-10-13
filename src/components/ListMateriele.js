@@ -126,11 +126,11 @@ function ListMateriele() {
                 }, 1000)
               }),
           }}
-          title="Liste des matériaux"
+        title="Liste des matériaux"
         />
 
-        <ModalPopup title="Ajoute nouveau materiel" openPopup={openPopup} setOpenPopup={setOpenPopup}>
-          <AddMateriele />
+        <ModalPopup title="Ajoute nouveau materiel"  openPopup={openPopup} setOpenPopup={setOpenPopup}>
+          <AddMateriele method="post" enctype="multipart/form-data" />
         </ModalPopup>
       </Container>
       

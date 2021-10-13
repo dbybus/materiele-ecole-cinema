@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    const Materiele = sequelize.define("materieles", {
+    const Materiele = sequelize.define("materiels", {
       label: {
         type: Sequelize.STRING
       },
@@ -7,7 +7,7 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING
       },
       panne: {
-        type: Sequelize.INTEGER
+        type: Sequelize.BOOLEAN
       },
       externe: {
         type: Sequelize.BOOLEAN

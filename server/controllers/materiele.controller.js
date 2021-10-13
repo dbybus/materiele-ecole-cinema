@@ -5,13 +5,14 @@ const uploadFile = require("../middlewareUploads");
 const fs = require("fs")
 
 // Create and Save a new user
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
     if (!req.body.label) {
         res.status(400).send({
           message: "Content can not be empty!"
         });
         return;
       }
+
       // Create a User
       const material = {
         label: req.body.label,
@@ -201,7 +202,7 @@ exports.download = (req, res) => {
   });
 };
 
-
+//Integrer cette functionalite dans le la export.delete plus tard 
 exports.deleteImgMat = (req, res) => {
   console.log(req.body.url_pic)
     

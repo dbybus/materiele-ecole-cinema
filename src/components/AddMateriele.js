@@ -2,6 +2,9 @@ import React, {useState} from 'react'
 import {Form, Button, Row, Col, Container} from 'react-bootstrap'
 import DatePicker from 'react-datepicker'
 import MaterieleDataService from "../services/materiele.service";
+import moment from "moment"
+const common = require( "./common")
+//import {setImagePath} from "./common";
 /* import { DatePicker } from 'react-bootstrap-date-picker' */
 
 const AddMateriele = () => {
@@ -37,8 +40,9 @@ const AddMateriele = () => {
 
         setValidated(true);
     };
-
+    
     const addNew = () =>{
+        
         let data = {
             label: label,
             ref: ref,
@@ -49,35 +53,35 @@ const AddMateriele = () => {
             lieu: lieu,
             degre: degre,
             dateAchat: dateAchat,
-            url_pic: url_pic
+            url_pic: "/img/materiels/"+common.setImagePath(url_pic)
         };
           
         MaterieleDataService.create(data)
-        .then(() => {
-        console.log("Created new user successfully!");
-        })
-        .catch((e) => {
-        console.log(e);
-        alert(e)
-        });
+            .then(() => {
+                console.log("Created new user successfully!");
+            })
+            .catch((e) => {
+                console.log(e);
+                alert(e)
+            });
     }
 
     const onChangePicture = e => {
-        setImage(e.target.files[0])
-        setUrl_Pic('/img/materiels/'+e.target.files[0].name)
+        setImage(e.target.files[0]);
+        setUrl_Pic(e.target.files[0].name);
     };
 
     const addImage = async () =>{
-        
+
         const formData = new FormData();
         formData.append('file', image);
     
-        MaterieleDataService.uploadImgMat(formData)
+        MaterieleDataService.uploadImgMat(formData);
     } 
 
     return (
         <Container>
-            <Form noValidate validated={validated} onSubmit={handleSubmit}>
+            <Form noValidate validated={validated} onSubmit={handleSubmit} >
                 <Row className="mb-3">
                     <Form.Group as={Col} md="6" controlId="validationCustom01">
                         <Form.Label>Nom</Form.Label>

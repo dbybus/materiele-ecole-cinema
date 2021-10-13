@@ -9,8 +9,15 @@ class MaterieleDataService {
     return http.get(`/materiele/findOne/${id}`);
   }
 
-  create(data) {
-    return http.post("/materiele/create", data);
+  async create(data) {
+    return http.post("/materiele/create", data)
+      .then(result => {
+        // Handle result…
+        console.log(result.data);
+      }).catch((e) => {
+          console.log(e);
+          alert(e)
+      });
   }
 
   update(id, data) {
@@ -37,7 +44,7 @@ class MaterieleDataService {
         // Handle result…
         console.log(result.data);
     }).catch((e) => {
-        console.log(e.result.data);
+        console.log(e);
         alert(e)
     });
   }
