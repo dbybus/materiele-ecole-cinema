@@ -21,6 +21,7 @@ import AddMateriele from './AddMateriele';
 import ModalPopup from './ModalPopup';
 
 function ListMateriele() {
+  
     const [allMateriele, setAllMateriele] = useState([])
     const [openPopup, setOpenPopup] = useState(false)
    
@@ -58,9 +59,11 @@ function ListMateriele() {
     };
 
     useEffect(() =>{
+      if(openPopup === false){
         getAllMateriele();
-    },[])
-
+      }
+    },[openPopup])
+    
     return (
       <Container>
         <MaterialTable 
@@ -130,7 +133,7 @@ function ListMateriele() {
         />
 
         <ModalPopup title="Ajoute nouveau materiel"  openPopup={openPopup} setOpenPopup={setOpenPopup}>
-          <AddMateriele method="post" enctype="multipart/form-data" />
+          <AddMateriele setOpenPopup={setOpenPopup} method="post" enctype="multipart/form-data" />
         </ModalPopup>
       </Container>
       

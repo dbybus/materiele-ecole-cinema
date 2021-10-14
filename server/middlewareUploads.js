@@ -1,13 +1,15 @@
 const util = require("util");
 const multer = require("multer");
-const moment = require("moment")
 const common = require("../src/components/common")
+const path = require("path")
+
 const maxSize = 2 * 2024 * 2024;
 
 let storage = multer.diskStorage({
- 
+  
   destination: (req, file, cb) => {
-    cb(null, __basedir + "/public/img/materiels/");
+    //cb(null, __basedir + "/public/img/materiels/");
+    cb(null, path.join(path.dirname(require.main.filename || process.mainModule.filename), 'public', 'img', 'materiels'));
   },
   filename: (req, file, cb) => {
     let now = common.setImagePath(file.originalname);
