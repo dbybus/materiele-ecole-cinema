@@ -7,10 +7,13 @@ import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-agenda/build/styles.css';
 import 'react-datetime/css/react-datetime.css';
+import Auth0ProviderWithHistory from "./auth/auth0-provider-with-history"
 
 ReactDOM.render(
   <BrowserRouter>
+    <Auth0ProviderWithHistory>
       <App />
+    </Auth0ProviderWithHistory>
   </BrowserRouter>,
   document.getElementById('root')
 );

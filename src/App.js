@@ -1,51 +1,33 @@
-import Header from './components/Header';
-import {useState} from "react";
-import axios from "./http-common";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-import Login from './components/Login';
-import Register from './components/Register';
-import Reset from './components/Reset';
-import Dashboard from './components/Dashboard';
+import { BrowserRouter as Router, Switch } from "react-router-dom";
 import "./css/Login.css";
-import NavBar from './components/NavBar';
-import AddMateriele from './components/AddMateriele';
 import ListMateriele from './components/ListMateriele';
 import Agenda from './components/Agenda';
+import Loading from './components/loading';
+import { useAuth0 } from '@auth0/auth0-react';
+import NavBar from './components/nav-bar';
+import Profile from "./components/profile"
+import ProtectedRoute from "./auth/protected-route";
 
 function App() {
+  const { isLoading } = useAuth0();
 
-  const [name, setName] = useState("")
-  const [password, setPassword] = useState("")
-  const [email, setEmail] = useState("")
-  const [isAdmin, setIsAdmin] = useState("")
-
-  const getUser = () => {
-    console.log(name);
-
-    axios.post('http://localhost:3001/api/users', {
-      
-      name: name,
-      password: password,
-      email: email,
-      isAdmin: isAdmin
-    })
+  if (isLoading) {
+    return <Loading />;
   }
 
   return (
-    <div className="app">
+    <div id="app" className="d-flex flex-column h-100">
       <NavBar />
       <Router>
+      <div className="container flex-grow-1">
         <Switch>
-          <Route exact path="/" component={Login} />
-          <Route exact path="/register" component={Register} />
-          <Route exact path="/reset" component={Reset} />
-          <Route exact path="/dashboard" component={Dashboard} />
-          <Route exact path="/listmateriele" component={ListMateriele} />
-          <Route exact path="/agenda" component={Agenda} />
+          <ProtectedRoute path="/" exact component={ListMateriele} />
+          <ProtectedRoute path="/profile" component={Profile} />
+          <ProtectedRoute path="/agenda" component={Agenda} />
         </Switch>
+      </div>
       </Router>
-    </div>  
-
+    </div>
   );
 }
 

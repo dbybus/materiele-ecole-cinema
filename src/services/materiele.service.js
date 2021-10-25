@@ -2,7 +2,12 @@ import http from "../http-common";
 
 class MaterieleDataService {
   getAll() {
-    return http.get("/materiele/findAll");
+    return http.get("/materiele/findAll", {
+      headers:{
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',
+      }
+    })
   }
 
   get(id) {

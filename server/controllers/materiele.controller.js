@@ -3,64 +3,87 @@ const Materiele = db.materiele;
 const Op = db.Sequelize.Op;
 const uploadFile = require("../middlewareUploads");
 const fs = require("fs")
+const verifyToken = require('../../src/jwtverify');
 
 // Create and Save a new user
 exports.create = async (req, res) => {
-    if (!req.body.label) {
-        res.status(400).send({
-          message: "Content can not be empty!"
-        });
-        return;
-      }
-
-      // Create a User
-      const material = {
-        label: req.body.label,
-        ref: req.body.ref,
-        //panne: req.body.panne,
-        //externe: req.body.externe,
-        categorie: req.body.categorie,
-        //sousCateg: req.body.sousCateg,
-        Qtotale: req.body.Qtotale,
-        tarifLoc: req.body.tarifLoc,
-        valRemp: req.body.valRemp,
-        dateAchat: req.body.dateAchat,
-        //ownerExt: req.body.ownerExt,
-        //remarque: req.body.remarque,
-        degre: req.body.degre,
-        lieu: req.body.lieu,
-        url_pic: req.body.url_pic
-
-      };
+  
+  if (!req.body.label) {
+    res.status(400).send({
+      message: "Content can not be empty!"
+    });
+    return;
+  }
+  
+  // Create a User
+  const material = {
+    label: req.body.label,
+    ref: req.body.ref,
+    //panne: req.body.panne,
+    //externe: req.body.externe,
+    categorie: req.body.categorie,
+    //sousCateg: req.body.sousCateg,
+    Qtotale: req.body.Qtotale,
+    tarifLoc: req.body.tarifLoc,
+    valRemp: req.body.valRemp,
+    dateAchat: req.body.dateAchat,
+    //ownerExt: req.body.ownerExt,
+    //remarque: req.body.remarque,
+    degre: req.body.degre,
+    lieu: req.body.lieu,
+    url_pic: req.body.url_pic
+  };
       
-      // Save User in the database
-      Materiele.create(material)
+  // Save User in the database
+  Materiele.create(material)
+    .then(data => {
+      res.send(data);
+    })
+    .catch(err => {
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while creating the Material."
+      });
+    });
+};
+
+// Retrieve all Tutorials from the database.
+exports.findAll = (req, res) => {
+  
+  if(req.headers['authorization']){
+
+    const authHeader = req.headers['authorization'];
+    const berearToken = authHeader.split(' ');
+    const token = berearToken[1];
+
+    try {
+      
+      verifyToken(token, req, res);
+      console.log("My payload ", req.payload.permissions);
+      const name = req.query.name;
+      var condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
+    
+      Materiele.findAll({ where: condition })
         .then(data => {
           res.send(data);
         })
         .catch(err => {
           res.status(500).send({
             message:
-              err.message || "Some error occurred while creating the Material."
+              err.message || "Some error occurred while retrieving materials."
           });
         });
-};
-
-// Retrieve all Tutorials from the database.
-exports.findAll = (req, res) => {
-    const name = req.query.name;
-    var condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
-  
-    Materiele.findAll({ where: condition })
-      .then(data => {
-        res.send(data);
-      })
-      .catch(err => {
-        res.status(500).send({
-          message:
-            err.message || "Some error occurred while retrieving materials."
-        });
-      });
+      
+    } catch (error) {
+      console.log(error)
+    }    
+  }else{
+    res.status(500).send({
+      message:
+         "You dont have proper access."
+    });
+  }
+    
 };
 
 // Find a single Tutorial with an id
