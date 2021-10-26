@@ -1,11 +1,10 @@
+const {verifyToken, signRefreshToken} = require('../../src/jwtverify');
 class TokenService {
     getLocalRefreshToken() {
-      const user = JSON.parse(localStorage.getItem("user"));
-      return user?.refreshToken;
+      return signRefreshToken();
     }
   
     getLocalAccessToken() {
-      
       return localStorage.getItem("token");
     }
 
