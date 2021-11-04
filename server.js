@@ -11,7 +11,7 @@ const app = express();
 global.__basedir = __dirname;
 
 var corsOptions = {
-  origin: false,
+  origin: 'https://192.168.1.5:3001/',
   //origin: "http://localhost:3000"
 };
 
@@ -44,6 +44,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 require("./server/routes/user.routes")(app);
 require("./server/routes/materiele.routes")(app);
+require("./server/routes/reservation.routes")(app);
 
 const privateKey = fs.readFileSync("./.cert/key.pem", "utf8");
 const certificate = fs.readFileSync("./.cert/cert.pem", "utf8");

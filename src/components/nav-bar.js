@@ -1,5 +1,4 @@
 import React from 'react';
-
 import MainNav from './NavBar';
 import AuthNav from './auth-nav';
 

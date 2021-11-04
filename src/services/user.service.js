@@ -1,8 +1,14 @@
 import http from "../http-common";
+var axios = require("axios").default;
 
 class UserDataService {
   getAll() {
-    return http.get("/users");
+    return axios.get(`https://${process.env.REACT_APP_AUTH0_DOMAIN}/api/v2/users`, {
+      headers: {
+        'Authorization' : `Bearer ${process.env.REACT_APP_AUTH0_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      }
+    })
   }
 
   get(id) {

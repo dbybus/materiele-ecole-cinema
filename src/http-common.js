@@ -18,8 +18,12 @@ const httpsAgent = new https.Agent({
 })
 const axiosApiInstance =  axios.create({
  
-  //baseURL: "http://localhost:3001/api",
+  //baseURL: "https://localhost:3001/api",
+  
   baseURL: "https://192.168.176.35:3001/api",
+  /* httpsAgent: new https.Agent({  
+    rejectUnauthorized: false
+  }), */
   headers: {
     'Content-type': 'application/json',
     'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',

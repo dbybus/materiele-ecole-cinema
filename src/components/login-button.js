@@ -3,7 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import TokenService from '../services/token.service'
 
 function LoginButton(){
-    const { loginWithRedirect , user} = useAuth0();
+    const { loginWithRedirect, user} = useAuth0();
 
     useEffect(() => {
         console.log(user)
