@@ -21,13 +21,11 @@ import {useAuth0} from "@auth0/auth0-react"
 
 
 function ListMaterieleReservation(props) {
+
   const { materiel, setMateriel, materielReserve } = props;
-  //const [user, loading, error] = useAuthState(auth);
   const [allMateriele, setAllMateriele] = useState([]);
-  //const [token, setToken] = useState('')
-  const {user, getAccessTokenSilently} = useAuth0()
-  const { uid, name, picture, email } = user;
-  console.log(materielReserve)
+  const [asyncCall, setAsyncCall] = useState(false);
+
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
     Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -47,63 +45,85 @@ function ListMaterieleReservation(props) {
     ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
     ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
   };
-
+  
+  //console.log("Materiel encore reserve", materielReserve)
   const getAllMateriele = async () => {
-    MaterieleDataService.getAll()
-    .then(response => {
+    
+    const response = await MaterieleDataService.getAll();
+    
+    response.data.forEach(element => {  
+      //Add temporary attribute quantite disponible
+      element.quantiteDisp = element.Qtotale;
+      //Verify if material is reserved and which quantity 
+      const materielTemp = materielReserve.find(item => item.id_materiel=== element.id);
       
-      setAllMateriele(response.data);
+      if (materielTemp != undefined) { 
+        //console.log("Materiel Reserve", materielTemp)
+        
+        //Reduce rezerved quantity from total amount 
+        element.quantiteDisp = element.Qtotale - materielTemp.quantite;
+      }
+
+      //useEffect trigger after async call 
+      setAsyncCall(true)       
     })
-    .catch((e) => {
-      console.log(e);
-    });
+
+    setAllMateriele(response.data);
   };
 
   useEffect(() =>{
       getAllMateriele();
-  },[])
+      console.log("Materiel ",allMateriele)
+  },[asyncCall])
 
   return (
     <Container>
       <MaterialTable 
         icons={tableIcons}
-        
         columns={[
           { title: 'Nom', field: 'label', editable: 'never' },
           { title: 'Image', field: 'image', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />, editable: 'never'},
           { title: 'Category', field: 'categorie', editable: 'never'},
-          { title: 'Quantite', field: 'Qtotale', type: 'numeric'},
+          { title: 'Quantite Disponible', field: 'quantiteDisp'},
+          { title: 'Quantite Totale', field: 'Qtotale'},
           { title: 'Tarif', field: 'tarifLoc', editable: 'never'},
           { title: 'Lieu', field: 'lieu', editable: 'never'},
           { title: 'Total', field: 'total', editable: 'never'}
         ]}
         data={allMateriele}
         actions={[
-          {
-            icon: () => <AddBox style={{color: 'blue'}}/>,
-            tooltip: 'Ajoute materiel au reservation',
+          rowData => ({
+            icon: () => <AddBox style={{color: rowData.quantiteDisp != 0 ? 'blue' : 'red'}}/>,
+            tooltip: rowData.quantiteDisp === 0 ? 'Quantite disponible 0' :'Ajoute materiel au reservation',
+            disabled: rowData.quantiteDisp === 0,
             onClick: (event, rowData) =>{
-              const matos = materielReserve.find(item => item.id_materiel === rowData.id);
+              const dataUpdate = [...allMateriele];
+              const index = rowData.tableData.id;
               
-              if (matos != undefined) { // This is just for understanding. `undefined` inside `if` will give false. So you can use `if(!temp)`
-                if(matos.quantite >= rowData.Qtotale){
-                  alert("Qantite maximum deja reserve")
-                }
-              }
+              console.log("Clicked item ", dataUpdate[index])
+              
+              if(dataUpdate[index].quantiteDisp === 0){
+                alert("Qantite maximum deja reserve")
+              }else{
+                //update quantite disponible 
+                dataUpdate[index].quantiteDisp -=1;
+                setAllMateriele([...dataUpdate]);
 
-              const temp = materiel.find(item => item.id_materiel === rowData.id)
-              if (temp != undefined) { // This is just for understanding. `undefined` inside `if` will give false. So you can use `if(!temp)`
-                temp.quantite+= 1
-              } else {
-                setMateriel(oldArray => [...oldArray, {
-                  id_materiel: rowData.id,
-                  quantite: 1
-                }])
-              }
+                //Count how many new reserved material 
+                const temp = materiel.find(item => item.id_materiel === rowData.id)
+                
+                if (temp != undefined) { // This is just for understanding. `undefined` inside `if` will give false. So you can use `if(!temp)`
+                  temp.quantite+= 1
+                } else {
+                  setMateriel(oldArray => [...oldArray, {
+                    id_materiel: rowData.id,
+                    quantite: 1
+                  }])
+                }
+              }              
             } 
-          }
+          })
         ]}
-       
         /* cellEditable={{
           onCellEditApproved: (newValue, oldValue, rowData, columnDef) => {
             return new Promise((resolve, reject) => {

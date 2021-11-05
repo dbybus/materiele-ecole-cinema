@@ -4,12 +4,13 @@ import ListMaterieleReservation from "./ListMaterieleReservation";
 import DatePickerReserv from "./DatePickerReserv";
 import {useAuth0} from "@auth0/auth0-react"
 import ReservationDataService from "../services/reservation.service"
-
+import { useHistory } from 'react-router';
 
 const AddReservation = (props) => {
     const {allReservations} = props;
     const {user} = useAuth0();
     const {sub, email} = user;
+    const history = useHistory();
     const [step, setStep] = useState(1);
     const [reservationName, setReservationName] = useState("");
     const [lieu, setLieu] = useState("");
@@ -82,7 +83,7 @@ const AddReservation = (props) => {
         ReservationDataService.create(data)
             .then(() => {
                 console.log("Created new reservation successfully!");
-                
+                history.push("/Reservation")
             })
             .catch((e) => {
                 console.log(e);
