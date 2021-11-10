@@ -23,7 +23,7 @@ export default function DatePickerReserv(props) {
 
   return (
     <div className="RangeExample">
-      <p>
+      <p style={{color: !from || !to ? 'red' : null}}>
         {!from && !to && 'Please select the first day.'}
         {from && !to && 'Please select the last day.'}
         {from &&

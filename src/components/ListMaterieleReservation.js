@@ -17,14 +17,13 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
-import {useAuth0} from "@auth0/auth0-react"
-
+import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
+import Loading from './loading';
 
 function ListMaterieleReservation(props) {
 
-  const { materiel, setMateriel, materielReserve } = props;
-  const [allMateriele, setAllMateriele] = useState([]);
-  const [asyncCall, setAsyncCall] = useState(false);
+  const { materiel, setMateriel, materielReserve, visitedStep2, allMateriele, setAllMateriele} = props;
+  const [loading, setLoading] = useState(true);
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -49,92 +48,129 @@ function ListMaterieleReservation(props) {
   //console.log("Materiel encore reserve", materielReserve)
   const getAllMateriele = async () => {
     
-    const response = await MaterieleDataService.getAll();
-    
-    response.data.forEach(element => {  
-      //Add temporary attribute quantite disponible
-      element.quantiteDisp = element.Qtotale;
-      //Verify if material is reserved and which quantity 
-      const materielTemp = materielReserve.find(item => item.id_materiel=== element.id);
+      const response = await MaterieleDataService.getAll();
       
-      if (materielTemp != undefined) { 
-        //console.log("Materiel Reserve", materielTemp)
+      response.data.map(element => {  
+        //Add temporary attribute quantite disponible
+        element.quantiteDisp = element.Qtotale;
+        element.tempMateriel = 0;
+        element.prixTotal = 0;
+        //Verify if material is reserved and which quantity 
+        const materielTemp = materielReserve.find(item => item.id_materiel=== element.id);
         
-        //Reduce rezerved quantity from total amount 
-        element.quantiteDisp = element.Qtotale - materielTemp.quantite;
-      }
+        if (materielTemp != undefined) { 
+          //console.log("Materiel Reserve", materielTemp)
+          //Reduce rezerved quantity from total amount 
+          element.quantiteDisp = element.Qtotale - materielTemp.quantite;
 
-      //useEffect trigger after async call 
-      setAsyncCall(true)       
-    })
+        }
+      })
 
-    setAllMateriele(response.data);
+      setAllMateriele(response.data);
+      setLoading(false);
   };
 
   useEffect(() =>{
+    //console.log("LIST MATERIAL VISITED STEP 2 ",visitedStep2)
+
+    if(!visitedStep2){
       getAllMateriele();
-      console.log("Materiel ",allMateriele)
-  },[asyncCall])
+    }else{
+      setLoading(false);
+    }
+
+  },[loading])
 
   return (
+    loading ? <Container className="d-flex justify-content-center align-items-center"><Loading /></Container> :  
     <Container>
-      <MaterialTable 
-        icons={tableIcons}
-        columns={[
-          { title: 'Nom', field: 'label', editable: 'never' },
-          { title: 'Image', field: 'image', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />, editable: 'never'},
-          { title: 'Category', field: 'categorie', editable: 'never'},
-          { title: 'Quantite Disponible', field: 'quantiteDisp'},
-          { title: 'Quantite Totale', field: 'Qtotale'},
-          { title: 'Tarif', field: 'tarifLoc', editable: 'never'},
-          { title: 'Lieu', field: 'lieu', editable: 'never'},
-          { title: 'Total', field: 'total', editable: 'never'}
-        ]}
-        data={allMateriele}
-        actions={[
-          rowData => ({
-            icon: () => <AddBox style={{color: rowData.quantiteDisp != 0 ? 'blue' : 'red'}}/>,
-            tooltip: rowData.quantiteDisp === 0 ? 'Quantite disponible 0' :'Ajoute materiel au reservation',
-            disabled: rowData.quantiteDisp === 0,
-            onClick: (event, rowData) =>{
-              const dataUpdate = [...allMateriele];
-              const index = rowData.tableData.id;
-              
-              console.log("Clicked item ", dataUpdate[index])
-              
-              if(dataUpdate[index].quantiteDisp === 0){
-                alert("Qantite maximum deja reserve")
-              }else{
-                //update quantite disponible 
-                dataUpdate[index].quantiteDisp -=1;
-                setAllMateriele([...dataUpdate]);
+    <MaterialTable 
+      icons={tableIcons}
+      options = {{
+        rowStyle: (index) => index%2 == 0 ? {background:"#f5f5f5"} : null 
+      }}
+      columns={[
+        { title: 'Nom', field: 'label', editable: 'never' },
+        { title: 'Image', field: 'image', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />, editable: 'never'},
+        { title: 'Category', field: 'categorie', editable: 'never'},
+        { title: 'Disponible', field: 'quantiteDisp', type: 'numeric'},
+        { title: 'Quantite', field: 'Qtotale', type: 'numeric'},
+        { title: 'Tarif', field: 'tarifLoc', editable: 'never', type: 'currency', currencySetting:{ locale: 'fr-CH',currencyCode:'CHF', minimumFractionDigits:0, maximumFractionDigits:2}},
+        { title: 'Lieu', field: 'lieu', editable: 'never'},
+        { title: 'Total', field: 'prixTotal', editable: 'never', type: 'currency', currencySetting:{ locale: 'fr-CH',currencyCode:'CHF', minimumFractionDigits:0, maximumFractionDigits:2}}
+      ]}
+      data={allMateriele}
+      actions={[
+        rowData => ({
+          icon: () => <AddBox style={{color: rowData.quantiteDisp != 0 ? 'blue' : 'red'}}/>,
+          tooltip: rowData.quantiteDisp === 0 ? 'Quantite disponible 0' : 'Ajouter matériel à la reservation',
+          disabled: rowData.quantiteDisp === 0,
+          onClick: (event, rowData) =>{
+            const dataUpdate = [...allMateriele];
+            const index = rowData.tableData.id;
+            
+            console.log("Added item ", dataUpdate[index])
+            
+            if(dataUpdate[index].quantiteDisp !== 0){
+              dataUpdate[index].quantiteDisp -=1;
+              dataUpdate[index].tempMateriel +=1;
+              dataUpdate[index].prixTotal += dataUpdate[index].tarifLoc;
+              setAllMateriele([...dataUpdate]);
 
-                //Count how many new reserved material 
-                const temp = materiel.find(item => item.id_materiel === rowData.id)
-                
-                if (temp != undefined) { // This is just for understanding. `undefined` inside `if` will give false. So you can use `if(!temp)`
-                  temp.quantite+= 1
-                } else {
-                  setMateriel(oldArray => [...oldArray, {
-                    id_materiel: rowData.id,
-                    quantite: 1
-                  }])
+              //Count how many new reserved material 
+              const temp = materiel.find(item => item.id_materiel === rowData.id)
+              
+              if (temp != undefined) {
+                temp.quantite += 1
+              } else {
+                setMateriel(oldArray => [...oldArray, {
+                  id_materiel: rowData.id,
+                  quantite: 1
+                }])
+              }
+            }           
+          } 
+        }),
+        rowData => ({
+          icon: () => <span><h5>{rowData.tempMateriel}</h5></span>,
+          disabled: true,
+        }),
+        rowData => ({
+          icon: () => <IndeterminateCheckBoxIcon style={{color: rowData.tempMateriel != 0 ? 'blue' : 'red'}}/>,
+          disabled: rowData.tempMateriel !== 0 ? false : true,
+          tooltip: rowData.tempMateriel !== 0 ? ' Retirer matériel de la réservation' : 'Quantité maximale déjà réservée',
+          onClick : () => {
+            const dataUpdate = [...allMateriele];
+            const index = rowData.tableData.id;
+
+            if(dataUpdate[index].tempMateriel !== 0){
+              dataUpdate[index].quantiteDisp += 1;
+
+              dataUpdate[index].tempMateriel -= 1;
+              dataUpdate[index].prixTotal -= dataUpdate[index].tarifLoc;
+              setAllMateriele([...dataUpdate]);
+
+              const temp = materiel.find(item => item.id_materiel === rowData.id)
+              
+              if (temp != undefined) {
+                temp.quantite -= 1
+                if(temp.quantite === 0){
+                  materiel.forEach((element, index, object) => {
+                    if(element.quantite === 0){
+                      object.splice(index, 1);
+                    }
+                  })
+                  console.log("Si quantite 0 l'objet efface", materiel)
                 }
-              }              
-            } 
-          })
-        ]}
-        /* cellEditable={{
-          onCellEditApproved: (newValue, oldValue, rowData, columnDef) => {
-            return new Promise((resolve, reject) => {
-              console.log('newValue: ' + newValue);
-              setTimeout(resolve, 1000);
-            });
+              }
+            }
           }
-        }} */
-      title="Liste des matériaux"
-      />
-    </Container>
+        })
+      ]}
+    title="Liste des matériaux"
+    />
+  </Container>
+   
     
   )
 }

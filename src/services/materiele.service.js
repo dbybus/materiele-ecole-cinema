@@ -42,7 +42,7 @@ class MaterieleDataService {
         console.log(e);
         alert(e)
     }); */
-    console.log(process.env.REACT_APP_AUTH0_API_TOKEN)
+
     return http.get("/materiele/findAll", {
       headers:{
         'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ class MaterieleDataService {
     })
   }
 
-  get(id) {
+ get(id) {
     return http.get(`/materiele/findOne/${id}`);
   }
 

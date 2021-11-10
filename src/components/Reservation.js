@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import {Container, Button} from 'react-bootstrap'
-import { useHistory } from "react-router-dom";
 import ReservationDataService from "../services/reservation.service"
 import AddReservation from "./AddReservation";
 
@@ -8,16 +6,14 @@ import {
     ScheduleComponent, Day, Week, WorkWeek, Agenda as Agenda, Month, TimelineMonth, Inject,
     ViewsDirective, ViewDirective
   } from '@syncfusion/ej2-react-schedule';
-
+  import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 
 function Reservation() {
     const [allReservations, setAllReservervations] = useState([])
     const [toggle, setToggle] = useState(false)
-    const history = useHistory();
     
-    function routeChange() {
+    function toggleReservation() {
         setToggle(true);
-        //history.push("/AddReservation");
     }
     const getAllReservations = async () => {
         ReservationDataService.getAll()
@@ -47,15 +43,16 @@ function Reservation() {
                 IsAllDay: false
             })
         })
+
         return reservation;
     }
 
     return (
-        
         <div>
             {toggle && <AddReservation allReservations={allReservations}/>}
-            {!toggle && <div>
-                <Button onClick={routeChange}>Ajouter une Réservation</Button>
+            {!toggle && 
+            <div>
+                <ButtonComponent id='add' title='Add' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
                 <ScheduleComponent width='100%' height='550px' currentView='TimelineMonth'
                 selectedDate={new Date(2021, 10, 1)} eventSettings={ { dataSource: agendaItems() } }>
                     <ViewsDirective>

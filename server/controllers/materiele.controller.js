@@ -109,8 +109,9 @@ exports.findAll = (req, res) => {
     
 };
 
-// Find a single Tutorial with an id
+// Find a single material with an id
 exports.findOne = (req, res) => {
+ 
   if(req.headers['authorization']){
     
     const token = getBearerToken(req.headers['authorization']);
@@ -130,7 +131,7 @@ exports.findOne = (req, res) => {
   }
 };
 
-// Update a Tutorial by the id in the request
+// Update a material by the id in the request
 exports.update = (req, res) => {
   if(req.headers['authorization']){
 

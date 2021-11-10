@@ -73,7 +73,9 @@ function ListMateriele() {
     <Container>
       <MaterialTable 
         icons={tableIcons}
-        
+        options = {{
+          rowStyle: (data, index) => index%2 == 0 ? {background:"#f5f5f5"} : null 
+        }}
         columns={[
           { title: 'Nom', field: 'label' },
           { title: 'Reference', field: 'ref' },
