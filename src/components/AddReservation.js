@@ -4,9 +4,9 @@ import ListMaterieleReservation from "./ListMaterieleReservation";
 import DatePickerReserv from "./DatePickerReserv";
 import {useAuth0} from "@auth0/auth0-react"
 import ReservationDataService from "../services/reservation.service"
-import MaterielDataService from "../services/materiele.service"
 import { useHistory } from 'react-router';
 import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'
+import { convertDateToFr, calcDays, calcTotalPrice } from './common';
 
 const AddReservation = (props) => {
 
@@ -23,7 +23,6 @@ const AddReservation = (props) => {
     const [creatorId, setCreatorId] = useState("");
     const [creatorEmail, setCreatorEmail] = useState("");
     const [materielReserve, setMaterielReserve] = useState([]);
-    const [extMateriel, setExtMateriel] = useState([]);
     const [totalSum, setTotatSum] = useState(0);
     const [totalSumWithDays, setTotalSumWithDays] = useState(0);
     const [visitedStep2, setVisitedStep2] = useState(false);
@@ -47,80 +46,70 @@ const AddReservation = (props) => {
     const previousStep = () => {
         setStep(step - 1);
     }
-
-    const setData = async (id) => {
-        let response = await MaterielDataService.get(id);
-        return response.data;
-    }
-
-    const fetchLabel = async () => {
-        let total = 0;
-        setExtMateriel([]);
-        
-        materiel.map(async (element, index) =>{
-            let matos = await setData(element.id_materiel)
-            
-            element.label = matos.label;
-            setExtMateriel(oldArray => [...oldArray, element])
-            console.log("DATES ", from.setHours(0,0,0,0), to)
-            
-            total += matos.tarifLoc * element.quantite;
-            setTotatSum(total);
-        })
-
-        var difference_in_time = to.setHours(0,0,0,0) - from.setHours(0,0,0,0);
-        var difference_in_days = (difference_in_time / (1000 * 3600 * 24)) + 1;
-        let sumWithDays =  totalSum * difference_in_days;
-
-        setTotalSumWithDays(sumWithDays);
-        setDaysReservation(difference_in_days);
-    }
     
     useEffect(() => {
         //console.log("Step 1 data ", reservationName, lieu, from, to, materiel, creatorId, creatorEmail)
-        
-        if(step === 0){
+        if(step === -1){
+            history.push('/Reservation');
+        }else if(step === 0){
             setVisitedStep2(false);
             setMateriel([]);
         }else if(step === 1){
             getReservedMaterials();
         }else if(step === 2){
-            fetchLabel();
+            var difference_in_days = calcDays(from, to);
+            var total = calcTotalPrice(materiel);
+            setTotatSum(total);
+            setTotalSumWithDays( total * difference_in_days);
+            setDaysReservation(difference_in_days);
+            
             setVisitedStep2(true);
-            console.log(totalSumWithDays)
         }
-
     }, [step])
 
     useEffect(() => {
         setCreatorId(sub);
         setCreatorEmail(email);
+        return () => {
+            setCreatorId([]);
+            setCreatorEmail([]);
+          };
     }, [user]) 
-
+    
+    function dateRangeOverlaps(a_start, a_end, b_start, b_end) {
+        if (a_start <= b_start && b_start <= a_end) return true; // b starts in a
+        if (a_start <= b_end   && b_end   <= a_end) return true; // b ends in a
+        if (b_start <  a_start && a_end   <  b_end) return true; // a in b
+        
+        return false;
+    }
+    
     const getReservedMaterials = () => {
-        const findByDate = allReservations.filter(item => new Date(item.date_end) >= from);
-
+        const findByDate = allReservations.filter(item => dateRangeOverlaps(from, to, new Date(item.date_start), Date(item.date_end)));        
+        console.log("FIND BY DATE ", findByDate)
         let reservedMaterialList = [];
-
+        let overlapList = [];
+    
         Object.keys(findByDate).map((id) => {
 
-            JSON.parse(findByDate[id].materiel).forEach(element => {
-            
-              const temp = reservedMaterialList.find(item => item.id_materiel === element.id_materiel)
+            JSON.parse(findByDate[id].materiel).forEach((element , index) => {
+                //console.log(JSON.parse(findByDate[id].materiel)[index])
+              const temp = reservedMaterialList.find(item => item.id_materiel === element.id_materiel )
               
-              if (temp != undefined) { 
+              if (temp != undefined) {
                 temp.quantite += element.quantite
               } else {
-
                 reservedMaterialList.push({
                     id_materiel: element.id_materiel,
                     quantite: element.quantite
                 })
               }              
-            });         
+            });     
         })
 
+        //console.log("LIST SENT TO COMPONENT ", reservedMaterialList)
         setMaterielReserve(reservedMaterialList)
+        
     };
 
     const submitStep = () => {
@@ -160,7 +149,6 @@ const AddReservation = (props) => {
             <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
                 <Button
                 color="inherit"
-                disabled={step === 0}
                 onClick={previousStep}
                 sx={{ mr: 1 }}
                 >
@@ -221,13 +209,13 @@ const AddReservation = (props) => {
                             <ListGroup.Item>Titre: <b>{reservationName}</b></ListGroup.Item>
                             <ListGroup.Item>Lieu: <b>{lieu}</b></ListGroup.Item>
                             <ListGroup.Item>Bénéficiaire: <b>{creatorEmail}</b></ListGroup.Item>
-                            <ListGroup.Item>{`DU : ${from.toUTCString()}, AU: ${to.toUTCString()}`}</ListGroup.Item>
+                            <ListGroup.Item>{`DU : ${convertDateToFr(from)}, AU: ${convertDateToFr(to)}`}</ListGroup.Item>
                         </ListGroup>
                     </Row>
                     <Row className="mb-3">
                         <h5>Matériel</h5>
                         <ListGroup variant="flush">
-                            {extMateriel.map(item =>{
+                            {materiel.map(item =>{
                                 return(
                                     <ListGroup.Item key={item.id_materiel}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
                                 ) 
@@ -242,7 +230,7 @@ const AddReservation = (props) => {
                         </ListGroup>
                     </Row>
                     <Row className="mb-3">
-                        <Button onClick={submitStep}>
+                        <Button color="primary" variant="contained" onClick={submitStep}>
                             Réservation
                         </Button>
                     </Row>

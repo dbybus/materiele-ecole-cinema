@@ -23,6 +23,9 @@ module.exports = (sequelize, Sequelize) => {
         },
         confirm: {
             type: Sequelize.STRING
+        },
+        isApproved: {
+            type: Sequelize.BOOLEAN
         }
     });
 

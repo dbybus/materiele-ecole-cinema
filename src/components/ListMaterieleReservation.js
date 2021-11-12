@@ -61,11 +61,14 @@ function ListMaterieleReservation(props) {
         if (materielTemp != undefined) { 
           //console.log("Materiel Reserve", materielTemp)
           //Reduce rezerved quantity from total amount 
-          element.quantiteDisp = element.Qtotale - materielTemp.quantite;
-
+          if(element.Qtotale - materielTemp.quantite < 0){
+            element.quantiteDisp = 0;
+          }else{
+            element.quantiteDisp = element.Qtotale - materielTemp.quantite;
+          }
         }
       })
-
+      //console.log("MATOS RESERVE ", materielReserve)
       setAllMateriele(response.data);
       setLoading(false);
   };
@@ -125,7 +128,9 @@ function ListMaterieleReservation(props) {
               } else {
                 setMateriel(oldArray => [...oldArray, {
                   id_materiel: rowData.id,
-                  quantite: 1
+                  quantite: 1,
+                  label: rowData.label,
+                  tarifLoc: rowData.tarifLoc
                 }])
               }
             }           
@@ -155,6 +160,7 @@ function ListMaterieleReservation(props) {
               if (temp != undefined) {
                 temp.quantite -= 1
                 if(temp.quantite === 0){
+                  //If quantity is 0 remove the objec from json string
                   materiel.forEach((element, index, object) => {
                     if(element.quantite === 0){
                       object.splice(index, 1);
