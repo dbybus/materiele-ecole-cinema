@@ -20,6 +20,7 @@ const AddReservation = (props) => {
     const [from, setStartDate] = useState();
     const [to, setEndDate] = useState();
     const [materiel, setMateriel] = useState([]);
+    const [quantiteMateriel, setQuantiteMateriel] = useState([]);
     const [creatorId, setCreatorId] = useState("");
     const [creatorEmail, setCreatorEmail] = useState("");
     const [materielReserve, setMaterielReserve] = useState([]);
@@ -54,15 +55,36 @@ const AddReservation = (props) => {
         }else if(step === 0){
             setVisitedStep2(false);
             setMateriel([]);
+            setQuantiteMateriel([]);
         }else if(step === 1){
             getReservedMaterials();
         }else if(step === 2){
+            
+            let reservedMaterialList = [];
+            
+            materiel.forEach(item => {
+                var temp = reservedMaterialList.find(element => element.id_materiel === item.id_materiel);
+
+                if(temp !== undefined){
+                    temp.quantite += item.quantite;
+                   
+                }else{
+                    reservedMaterialList.push({
+                        id_materiel: item.id_materiel,
+                        quantite: 1,
+                        label: item.label,
+                        tarifLoc: item.tarifLoc
+                    })
+                }
+
+            })
+
+            setQuantiteMateriel(reservedMaterialList);
             var difference_in_days = calcDays(from, to);
-            var total = calcTotalPrice(materiel);
+            var total = calcTotalPrice(reservedMaterialList);  
             setTotatSum(total);
             setTotalSumWithDays( total * difference_in_days);
             setDaysReservation(difference_in_days);
-            
             setVisitedStep2(true);
         }
     }, [step])
@@ -88,26 +110,28 @@ const AddReservation = (props) => {
         const findByDate = allReservations.filter(item => dateRangeOverlaps(from, to, new Date(item.date_start), Date(item.date_end)));        
         console.log("FIND BY DATE ", findByDate)
         let reservedMaterialList = [];
-        let overlapList = [];
     
         Object.keys(findByDate).map((id) => {
+            console.log(findByDate[id])
+           
+            findByDate[id].getReservation.forEach((element , index) => {
+                var materiel = element.getMateriel;
 
-            JSON.parse(findByDate[id].materiel).forEach((element , index) => {
-                //console.log(JSON.parse(findByDate[id].materiel)[index])
-              const temp = reservedMaterialList.find(item => item.id_materiel === element.id_materiel )
-              
-              if (temp != undefined) {
-                temp.quantite += element.quantite
-              } else {
-                reservedMaterialList.push({
-                    id_materiel: element.id_materiel,
-                    quantite: element.quantite
-                })
-              }              
+                const temp = reservedMaterialList.find(item => item.id_materiel === materiel.id )
+                
+                if (temp != undefined) {
+                    console.log("Object found by id ", temp)
+                    temp.quantite += 1;
+                } else {
+                    reservedMaterialList.push({
+                        id_materiel: materiel.id,
+                        quantite: 1
+                    })
+                }              
             });     
         })
 
-        //console.log("LIST SENT TO COMPONENT ", reservedMaterialList)
+        console.log("LIST SENT TO COMPONENT ", reservedMaterialList)
         setMaterielReserve(reservedMaterialList)
         
     };
@@ -123,7 +147,8 @@ const AddReservation = (props) => {
             beneficiaire: creatorEmail,
             materiel: materiel
         };
-          
+        
+        console.log(materiel)
         ReservationDataService.create(data)
             .then(() => {
                 console.log("Created new reservation successfully!");
@@ -215,7 +240,8 @@ const AddReservation = (props) => {
                     <Row className="mb-3">
                         <h5>Matériel</h5>
                         <ListGroup variant="flush">
-                            {materiel.map(item =>{
+                            {quantiteMateriel.map(item =>{
+                                console.log(item)
                                 return(
                                     <ListGroup.Item key={item.id_materiel}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
                                 ) 

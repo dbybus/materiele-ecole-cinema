@@ -49,35 +49,42 @@ function ListMaterieleReservation(props) {
   const getAllMateriele = async () => {
     
       const response = await MaterieleDataService.getAll();
+      let newArray = [...response.data];
       
-      response.data.map(element => {  
+      newArray.map((element, index) => {  
         //Add temporary attribute quantite disponible
-        element.quantiteDisp = element.Qtotale;
-        element.tempMateriel = 0;
-        element.prixTotal = 0;
+        newArray[index].quantiteDisp = element.Qtotale;
+        newArray[index].tempMateriel = 0;
+        newArray[index].prixTotal = 0;
+
         //Verify if material is reserved and which quantity 
         const materielTemp = materielReserve.find(item => item.id_materiel=== element.id);
         
-        if (materielTemp != undefined) { 
+        if (materielTemp != undefined) {
+
+          newArray[index].quantiteDisp = element.Qtotale - materielTemp.quantite;
+          
           //console.log("Materiel Reserve", materielTemp)
           //Reduce rezerved quantity from total amount 
-          if(element.Qtotale - materielTemp.quantite < 0){
+          /* if(element.Qtotale - materielTemp.quantite < 0){
             element.quantiteDisp = 0;
           }else{
-            element.quantiteDisp = element.Qtotale - materielTemp.quantite;
-          }
+            
+          } */
         }
       })
       //console.log("MATOS RESERVE ", materielReserve)
-      setAllMateriele(response.data);
-      setLoading(false);
+      setAllMateriele(newArray)
+      
   };
 
   useEffect(() =>{
     //console.log("LIST MATERIAL VISITED STEP 2 ",visitedStep2)
 
     if(!visitedStep2){
-      getAllMateriele();
+      getAllMateriele().then(()=>{
+        setLoading(false);
+      });
     }else{
       setLoading(false);
     }
@@ -119,20 +126,12 @@ function ListMaterieleReservation(props) {
               dataUpdate[index].tempMateriel +=1;
               dataUpdate[index].prixTotal += dataUpdate[index].tarifLoc;
               setAllMateriele([...dataUpdate]);
-
-              //Count how many new reserved material 
-              const temp = materiel.find(item => item.id_materiel === rowData.id)
-              
-              if (temp != undefined) {
-                temp.quantite += 1
-              } else {
-                setMateriel(oldArray => [...oldArray, {
-                  id_materiel: rowData.id,
-                  quantite: 1,
-                  label: rowData.label,
-                  tarifLoc: rowData.tarifLoc
-                }])
-              }
+              setMateriel(oldArray => [...oldArray, {
+                id_materiel: rowData.id,
+                quantite: 1,
+                label: rowData.label,
+                tarifLoc: rowData.tarifLoc
+              }])
             }           
           } 
         }),

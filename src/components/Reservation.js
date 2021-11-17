@@ -4,12 +4,25 @@ import AddReservation from "./AddReservation";
 import { FaRegEnvelope, FaRegCalendarAlt, FaToolbox } from 'react-icons/fa'
 import { ListGroup } from "react-bootstrap";
 import { convertDateToFr, calcDays } from "./common";
+import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
 
 import {
     ScheduleComponent, Day, Week, WorkWeek, Agenda as Agenda, Month, TimelineMonth, Inject,
     ViewsDirective, ViewDirective
   } from '@syncfusion/ej2-react-schedule';
-  import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
+import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
+import { extend, L10n } from '@syncfusion/ej2-base';
+
+L10n.load({
+    'en-US': {
+        'schedule': {
+            'saveButton': 'Enregistrer',
+            'cancelButton': 'Fermer',
+            'deleteButton': 'Supprimer',
+            'editEvent': 'Modifier la réservation',
+        },
+    }
+});
 
 function Reservation() {
 
@@ -19,10 +32,11 @@ function Reservation() {
     function toggleReservation() {
         setToggle(true);
     }
-    
+
     const getAllReservations = async () => {
         ReservationDataService.getAll()
         .then(response => {
+            console.log(response.data)
             setAllReservervations(response.data);
         })
         .catch((e) => {
@@ -35,18 +49,38 @@ function Reservation() {
     }, []);
 
     const agendaItems = () => {
-        var reservation = []  
+        var reservation = [];  
+       
         
         allReservations.map(item => {
             let start_date = new Date(item.date_start);
             let end_date = new Date(item.date_end);
+            var materiels = [];
+            console.log(item)
+            
+            item.getReservation.forEach((element, index) => {
+                var materiel = element.getMateriel;
+                //console.log(item.getReservation[index].getMateriel.id)
+
+                var find = materiels.find(mat => mat.id === materiel.id);
+
+                if(find !== undefined){
+                    find.quantite += 1;
+                }else{
+                    materiel.quantite = 1;
+                    materiels.push(materiel)
+                }
+            })
+            
+            console.log("MATOS ", materiels)
+            
             reservation.push({
                 Id: item.id,
                 Subject: item.titre,
                 StartTime: new Date(start_date.getFullYear(), start_date.getMonth(), start_date.getDate()),
                 EndTime : new Date(end_date.getFullYear(), end_date.getMonth(), end_date.getDate()),
                 IsAllDay: false,
-                materiel:  item.materiel,
+                materiel:  materiels,
                 beneficiaire: item.beneficiaire,
                 createur: item.createur,
                 lieu: item.lieu
@@ -56,7 +90,8 @@ function Reservation() {
         return reservation;
     }
 
-    const content = (props) => {        
+    const content = (props) => {    
+        //console.log(props.materiel)
         return (
             <div>
                 {
@@ -81,9 +116,9 @@ function Reservation() {
                         <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
                                 <p>Matériel</p>
                                 <ListGroup variant="flush">
-                                    {JSON.parse(props.materiel).map(item =>{
+                                    {props.materiel.map(item =>{
                                         return(
-                                            <ListGroup.Item key={item.id_materiel}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
+                                            <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
                                         ) 
                                     })}
                                 </ListGroup>
@@ -93,6 +128,67 @@ function Reservation() {
             </div>
         );
     }
+
+    const actionComplete = (props) => {
+        console.log(props)
+        if(props.requestType === "eventChanged"){
+            let data = {
+                id: props.data[0].Id,
+                titre: props.data[0].Subject,
+                date_start: props.data[0].StartTime,
+                date_end: props.data[0].EndTime,
+                lieu: props.data[0].lieu,
+                beneficiaire: props.data[0].beneficiaire
+            }
+            
+            /* var find = allReservations.find(element => element.id === props.data[0].Id);
+            find = props.data */
+
+            ReservationDataService.update(props.data[0].Id, data).then(() =>
+            {
+                console.log("Reservation succesfully updated");
+            }).catch(error => {
+                console.log(error)
+            });
+        }else if(props.requestType === "eventRemoved"){
+            ReservationDataService.delete(props.data[0].Id).then(() =>
+            {
+                console.log("Reservation succesfully deleted");
+            }).catch(error => {
+                console.log(error)
+            });
+        }
+    }
+
+    const editorTemplate = (props) =>{
+        return (
+            <table className="custom-event-editor" style={{ width: '100%', cellpadding: '5' }}>
+                <tbody>
+                    <tr>
+                        <td className="e-textlabel">Titre</td><td style={{ colspan: '4' }}>
+                            <input id="Subject" className="e-field e-input" type="text" name="Subject" style={{ width: '100%' }} />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="e-textlabel">Status</td><td style={{ colspan: '4' }}>
+                            <input id="beneficiaire" className="e-field e-input" type="text" name="beneficiaire" style={{ width: '100%' }} />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="e-textlabel">From</td><td style={{ colspan: '4' }}>
+                            <DateTimePickerComponent id="StartTime" format='dd/MM/yy hh:mm a' data-name="StartTime" value={new Date(props.startTime || props.StartTime)} className="e-field"></DateTimePickerComponent>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="e-textlabel">To</td><td style={{ colspan: '4' }}>
+                            <DateTimePickerComponent id="EndTime" format='dd/MM/yy hh:mm a' data-name="EndTime" value={new Date(props.endTime || props.EndTime)} className="e-field"></DateTimePickerComponent>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        );
+    }
+
     return (
         <div>
             {toggle && <AddReservation allReservations={allReservations} />}
@@ -100,7 +196,9 @@ function Reservation() {
             <div>
                 <ButtonComponent id='add' title='Add' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
                 <ScheduleComponent width='100%' height='550px' currentView='TimelineMonth'
-                selectedDate={new Date(2021, 10, 1)} eventSettings={ { dataSource: agendaItems() } } quickInfoTemplates={{content : content}}>
+                    selectedDate={new Date(2021, 10, 1)} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
+                    editorTemplate={editorTemplate}
+                >
                     <ViewsDirective>
                         <ViewDirective option='Day' />
                         <ViewDirective option='Week' />

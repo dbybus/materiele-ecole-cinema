@@ -18,9 +18,6 @@ module.exports = (sequelize, Sequelize) => {
         beneficiaire: {
             type: Sequelize.STRING
         },
-        materiel: {
-            type: Sequelize.TEXT
-        },
         confirm: {
             type: Sequelize.STRING
         },

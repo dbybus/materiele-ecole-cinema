@@ -21,6 +21,14 @@ class ReservationDataService {
           alert(e)
       });
   }
+
+  update(id, data) {
+    return http.put(`/reservation/update/${id}`, data);
+  }
+
+  delete(id) {
+    return http.delete(`/reservation/delete/${id}`);
+  }
 }
 
 export default new ReservationDataService();

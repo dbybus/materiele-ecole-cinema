@@ -1,14 +1,18 @@
 module.exports = app => {
-    const resevation = require("../controllers/reservation.controller.js");
+    const reservation = require("../controllers/reservation.controller.js");
   
     var router = require("express").Router();
   
-    // Create a new Tutorial
-    router.post("/create", resevation.create);
+    // Create a new reservation
+    router.post("/create", reservation.create);
   
-    // Retrieve all Tutorials
-    router.get("/findAll", resevation.findAll);
- 
-  
+    // Retrieve all reservations
+    router.get("/findAll", reservation.findAll);
+
+    //Update reservation
+    router.put("/update/:id", reservation.update)
+
+    router.delete("/delete/:id", reservation.delete)
+
     app.use('/api/reservation', router);
   };
