@@ -91,46 +91,68 @@ function Reservation() {
     }
 
     const content = (props) => {    
-        //console.log(props.materiel)
-        return (
-            <div>
-                {
-                    <div className="e-date-time">
-                        <div><FaRegCalendarAlt size={14}/></div>
-                        <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                            du {convertDateToFr(props.StartTime)} au {convertDateToFr(props.EndTime)} ({calcDays(props.StartTime, props.EndTime)} jours)
-                        </div>                
-                    </div>
-                }
-                {
-                    <div className="e-date-time">
-                        <div><FaRegEnvelope size={14}/></div>
-                        <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                            {props.beneficiaire}
-                        </div>                
-                    </div>
-                }
-                {
-                    <div className="e-date-time">
-                        <div><FaToolbox size={14}/></div>
-                        <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                <p>Matériel</p>
-                                <ListGroup variant="flush">
-                                    {props.materiel.map(item =>{
-                                        return(
-                                            <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
-                                        ) 
-                                    })}
-                                </ListGroup>
-                        </div>                
-                    </div>
-                }
-            </div>
-        );
+        //console.log(props)
+        if(props.elementType === 'event'){
+            return (
+               
+                    <div>
+                        {
+                            <div className="e-date-time">
+                                <div><FaRegCalendarAlt size={14}/></div>
+                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                    du {convertDateToFr(props.StartTime)} au {convertDateToFr(props.EndTime)} ({calcDays(props.StartTime, props.EndTime)} jours)
+                                </div>                
+                            </div>
+                        }
+                        {
+                            <div className="e-date-time">
+                                <div><FaRegEnvelope size={14}/></div>
+                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                    {props.beneficiaire}
+                                </div>                
+                            </div>
+                        }
+                        {
+                            <div className="e-date-time">
+                                <div><FaToolbox size={14}/></div>
+                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                        <p>Matériel</p>
+                                        <ListGroup variant="flush">
+                                            {props.materiel.map(item =>{
+                                                return(
+                                                    <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
+                                                ) 
+                                            })}
+                                        </ListGroup>
+                                </div>                
+                            </div>
+                        }
+                    </div>                                                                      
+               
+            );
+        }else{
+            return null;
+        }
+        
+    }
+
+    const onPopupOpen = (props) =>{ 
+        //console.log("onPopupOpen ", props)
+        let isCell = props.target.classList.contains('e-work-cells') || props.target.classList.contains('e-header-cells');
+
+        if (props.type === "QuickInfo" && isCell) { 
+            props.cancel = true; 
+        }
+        
+        if (props.data.Id === undefined && props.type == 'Editor') //to prevent the editor on cells 
+        { 
+            props.cancel = true; 
+        } 
     }
 
     const actionComplete = (props) => {
         console.log(props)
+        
         if(props.requestType === "eventChanged"){
             let data = {
                 id: props.data[0].Id,
@@ -140,9 +162,6 @@ function Reservation() {
                 lieu: props.data[0].lieu,
                 beneficiaire: props.data[0].beneficiaire
             }
-            
-            /* var find = allReservations.find(element => element.id === props.data[0].Id);
-            find = props.data */
 
             ReservationDataService.update(props.data[0].Id, data).then(() =>
             {
@@ -197,7 +216,7 @@ function Reservation() {
                 <ButtonComponent id='add' title='Add' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
                 <ScheduleComponent width='100%' height='550px' currentView='TimelineMonth'
                     selectedDate={new Date(2021, 10, 1)} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
-                    editorTemplate={editorTemplate}
+                    editorTemplate={editorTemplate} popupOpen={onPopupOpen}
                 >
                     <ViewsDirective>
                         <ViewDirective option='Day' />

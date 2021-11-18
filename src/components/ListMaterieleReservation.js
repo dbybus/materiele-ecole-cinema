@@ -82,7 +82,7 @@ function ListMaterieleReservation(props) {
     //console.log("LIST MATERIAL VISITED STEP 2 ",visitedStep2)
 
     if(!visitedStep2){
-      getAllMateriele().then(()=>{
+      getAllMateriele().finally(() => {
         setLoading(false);
       });
     }else{
