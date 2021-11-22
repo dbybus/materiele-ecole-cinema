@@ -20,12 +20,13 @@ import {Container} from 'react-bootstrap'
 import AddMateriele from './AddMateriele';
 import ModalPopup from './ModalPopup';
 import {useAuth0} from "@auth0/auth0-react"
-
+import {Select, MenuItem} from '@material-ui/core'
 
 function ListMateriele() {
   //const [user, loading, error] = useAuthState(auth);
   const [allMateriele, setAllMateriele] = useState([])
   const [openPopup, setOpenPopup] = useState(false)
+  const [filterCategorie, setFilterCategorie] = useState("all");
   //const [token, setToken] = useState('')
   const {user, getAccessTokenSilently} = useAuth0()
   const { uid, name, picture, email } = user;
@@ -57,7 +58,7 @@ function ListMateriele() {
     MaterieleDataService.getAll()
     .then(response => {
       
-      setAllMateriele(response.data);
+      setAllMateriele(filterCategorie === 'all' ? response.data: response.data.filter(item => item.categorie === filterCategorie));
     })
     .catch((e) => {
       console.log(e);
@@ -68,14 +69,14 @@ function ListMateriele() {
     if(openPopup === false){
       getAllMateriele();
     }
-  },[openPopup])
+  },[openPopup, filterCategorie])
 
   return (
     <Container>
       <MaterialTable 
         icons={tableIcons}
         options = {{
-          rowStyle: (data, index) => index%2 == 0 ? {background:"#f5f5f5"} : null 
+          rowStyle: (data, index) => index%2 == 0 ? {background:"#f5f5f5"} : null
         }}
         columns={[
           { title: 'Nom', field: 'label' },
@@ -91,6 +92,24 @@ function ListMateriele() {
         data={allMateriele}
         
         actions={[
+          {
+            icon: () => <Select
+            style={{width:100}}
+            value={filterCategorie}
+            onChange={(e)=>setFilterCategorie(e.target.value)}
+          >
+            <MenuItem value={"all"}><em>All</em></MenuItem>
+            <MenuItem value={"image"}>Image</MenuItem>
+            <MenuItem value={"lumiere"}>Lumière</MenuItem>
+            <MenuItem value={"son"}>Son</MenuItem>
+            <MenuItem value={"moniteur"}>Moniteur</MenuItem>
+            <MenuItem value={"trepieds"}>Trepieds</MenuItem>
+            <MenuItem value={"machinerie"}>Machinerie</MenuItem>
+            <MenuItem value={"autres"}>Autres</MenuItem>
+          </Select>,
+            tooltip: 'Choisir la catégorie',
+            isFreeAction: true,
+          },
           {
             icon: () => <AddBox style={{color: 'blue'}}/>,
             tooltip: 'Ajoute nouveau materiel',

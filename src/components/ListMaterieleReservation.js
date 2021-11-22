@@ -19,11 +19,13 @@ import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import Loading from './loading';
+import {Select, MenuItem} from '@material-ui/core'
 
 function ListMaterieleReservation(props) {
 
   const { materiel, setMateriel, materielReserve, visitedStep2, allMateriele, setAllMateriele} = props;
   const [loading, setLoading] = useState(true);
+  const [filterCategorie, setFilterCategorie] = useState("all")
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -74,7 +76,7 @@ function ListMaterieleReservation(props) {
         }
       })
       //console.log("MATOS RESERVE ", materielReserve)
-      setAllMateriele(newArray)
+      setAllMateriele(filterCategorie=== 'all' ? newArray : newArray.filter(item => item.categorie === filterCategorie))
       
   };
 
@@ -89,7 +91,7 @@ function ListMaterieleReservation(props) {
       setLoading(false);
     }
 
-  },[loading])
+  },[loading, filterCategorie])
 
   return (
     loading ? <Container className="d-flex justify-content-center align-items-center"><Loading /></Container> :  
@@ -111,6 +113,24 @@ function ListMaterieleReservation(props) {
       ]}
       data={allMateriele}
       actions={[
+        {
+          icon: () => <Select
+          style={{width:100}}
+          value={filterCategorie}
+          onChange={(e)=>setFilterCategorie(e.target.value)}
+        >
+          <MenuItem value={"all"}><em>All</em></MenuItem>
+          <MenuItem value={"image"}>Image</MenuItem>
+          <MenuItem value={"lumiere"}>Lumière</MenuItem>
+          <MenuItem value={"son"}>Son</MenuItem>
+          <MenuItem value={"moniteur"}>Moniteur</MenuItem>
+          <MenuItem value={"trepieds"}>Trepieds</MenuItem>
+          <MenuItem value={"machinerie"}>Machinerie</MenuItem>
+          <MenuItem value={"autres"}>Autres</MenuItem>
+        </Select>,
+          tooltip: 'Choisir la catégorie',
+          isFreeAction: true,
+        },
         rowData => ({
           icon: () => <AddBox style={{color: rowData.quantiteDisp != 0 ? 'blue' : 'red'}}/>,
           tooltip: rowData.quantiteDisp === 0 ? 'Quantite disponible 0' : 'Ajouter matériel à la reservation',
