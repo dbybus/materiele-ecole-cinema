@@ -1,7 +1,6 @@
 const JWT = require('jsonwebtoken');
 
 let verifyToken = (token, req, res) => {
-  console.log(process.env.REACT_APP_AUTH0_REFRESH_SECRET)
   if(token){
     JWT.verify(token, process.env.REACT_APP_AUTH0_SECRET.replace(/\\n/gm, '\n'), { algorithms: ['RS256'] }, (err, payload) =>{
       if(err){

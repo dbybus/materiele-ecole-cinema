@@ -7,6 +7,8 @@ import ReservationDataService from "../services/reservation.service"
 import { useHistory } from 'react-router';
 import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'
 import { convertDateToFr, calcDays, calcTotalPrice } from './common';
+import GeneratePdf from "./GeneratePdf"
+import { PDFDownloadLink } from '@react-pdf/renderer';
 
 const AddReservation = (props) => {
 
@@ -256,8 +258,17 @@ const AddReservation = (props) => {
                         </ListGroup>
                     </Row>
                     <Row className="mb-3">
+                        <PDFDownloadLink  document= {<GeneratePdf reservationName={reservationName} lieu={lieu} from={from} to={to} 
+                            quantiteMateriel={quantiteMateriel} totalSum={totalSum} daysReservation={daysReservation} totalSumWithDays={totalSumWithDays}
+                            creatorEmail={creatorEmail} />} 
+                            fileName="fee_acceptance.pdf">
+                            {({ blob, url, loading, error }) => (loading ? 'Chargement du document...' : 'Téléchargez votre devis')}
+                        </PDFDownloadLink>
+                        
+                    </Row>
+                    <Row className="mb-3">
                         <Button color="primary" variant="contained" onClick={submitStep}>
-                            Réservation
+                                Réservation
                         </Button>
                     </Row>
                 </Container>       

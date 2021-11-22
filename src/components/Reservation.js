@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import ReservationDataService from "../services/reservation.service"
 import AddReservation from "./AddReservation";
-import { FaRegEnvelope, FaRegCalendarAlt, FaToolbox } from 'react-icons/fa'
+import { FaRegEnvelope, FaRegCalendarAlt, FaToolbox, FaRegFilePdf } from 'react-icons/fa'
 import { ListGroup } from "react-bootstrap";
-import { convertDateToFr, calcDays } from "./common";
+import { convertDateToFr, calcDays, calcTotalPrice } from "./common";
 import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import GeneratePdf from "./GeneratePdf";
 
 import {
     ScheduleComponent, Day, Week, WorkWeek, Agenda as Agenda, Month, TimelineMonth, Inject,
@@ -114,16 +116,30 @@ function Reservation() {
                         }
                         {
                             <div className="e-date-time">
-                                <div><FaToolbox size={14}/></div>
+                                <div><FaToolbox  size={14}/></div>
                                 <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
                                         <p>Matériel</p>
                                         <ListGroup variant="flush">
                                             {props.materiel.map(item =>{
                                                 return(
-                                                    <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
+                                                    <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label} = ${item.tarifLoc} -.CHF`}</ListGroup.Item>
                                                 ) 
                                             })}
                                         </ListGroup>
+                                </div>                
+                            </div>
+                        }
+                        {
+                            <div className="e-date-time">
+                                <div><FaRegFilePdf size={14}/></div>
+                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                        <p>Devis</p>
+                                        <PDFDownloadLink  document= {<GeneratePdf reservationName={props.Subject} lieu={props.lieu} from={props.StartTime} to={props.EndTime} 
+                                            quantiteMateriel={props.materiel} totalSum={calcTotalPrice(props.materiel)} daysReservation={calcDays(props.StartTime, props.EndTime)} totalSumWithDays={calcTotalPrice(props.materiel)*calcDays(props.StartTime, props.EndTime)}
+                                            creatorEmail={props.beneficiaire} />} 
+                                            fileName="fee_acceptance.pdf">
+                                            {({ blob, url, loading, error }) => (loading ? 'Chargement du document...' : 'Téléchargez votre devis')}
+                                        </PDFDownloadLink>
                                 </div>                
                             </div>
                         }
