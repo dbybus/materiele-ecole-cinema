@@ -23,15 +23,12 @@ const AddMateriele = (props) => {
     const [lieu, setLieu] = useState("");
     const [url_pic, setUrl_Pic] = useState("");
     
-    const handleSubmitForm = (event) => {
-        const form = event.currentTarget;
-
-        if (form.checkValidity() === false) {
+    const handleSubmitForm = (event) => {      
+        
+        if(label === '' || lieu === '' || ref === '' || categorie === '' || tarifLoc === '' || valRemp === '' || Qtotale === ''){
             event.preventDefault();
             event.stopPropagation();
-        }
-        else
-        {
+        }else{
             addNew();
             addImage();
             setOpenPopup(false);
@@ -110,7 +107,6 @@ const AddMateriele = (props) => {
                     <Form.Label>File</Form.Label>
                     <Form.Control
                         type="file"
-                        required
                         name="file"
                         //value={image}
                         onChange={onChangePicture}
@@ -134,11 +130,14 @@ const AddMateriele = (props) => {
             <Row className="mb-3">
                 <Form.Group as={Col} md="4" controlId="validationCustom03">
                     <Form.Label>Categorie</Form.Label>
-                    <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={categorie} onChange={(e) => setCategorie(e.target.value)} >
-                        <option value="0">Choose...</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
+                    <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={categorie} onChange={(e) => setCategorie(e.target.value)} required >
+                        <option value="Autres">Autres</option>
+                        <option value="Son">Son</option>
+                        <option value="Lumiere">Lumière</option>
+                        <option value="Image">Image</option>
+                        <option value="Moniteur">Moniteur</option>
+                        <option value="Image">Image</option>
+                        <option value="Trepieds">Trepieds</option>
                     </Form.Select>
                 </Form.Group>
                 <Form.Group as={Col} md="4" controlId="validationCustom05" >
@@ -159,7 +158,10 @@ const AddMateriele = (props) => {
             <Row className="mb-3">
                 <Form.Group as={Col} md="4" controlId="validationCustom05">
                     <Form.Label>Lieu</Form.Label>
-                    <Form.Control type="text" placeholder="Lieu" required value={lieu} onChange={(e) => setLieu(e.target.value)}/>
+                    <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={lieu} onChange={(e) => setLieu(e.target.value)}>
+                        <option value="Geneve">Genève</option>
+                        <option value="Laussane">Laussane</option>
+                    </Form.Select>
                     <Form.Control.Feedback type="invalid">
                         Please provide a valid zip.
                     </Form.Control.Feedback>
@@ -167,10 +169,9 @@ const AddMateriele = (props) => {
                 <Form.Group as={Col} md="4" controlId="validationCustom03">
                     <Form.Label>Dégre</Form.Label>
                     <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={degre} onChange={(e) => setDegre(e.target.value)}>
-                        <option value="0">Choose...</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
+                        <option value="0">Réal. 1ère</option>
+                        <option value="1">Réal. 2em</option>
+                        <option value="2">Jurnalisme</option>
                     </Form.Select>
                 </Form.Group>
                 <Form.Group as={Col} md="4" controlId="validationCustom03">

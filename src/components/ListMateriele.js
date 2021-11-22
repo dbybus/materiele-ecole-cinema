@@ -29,8 +29,9 @@ function ListMateriele() {
   //const [token, setToken] = useState('')
   const {user, getAccessTokenSilently} = useAuth0()
   const { uid, name, picture, email } = user;
-  const role = user['https://example-api/roles'];
-  console.log("Here ",role[0], name)
+  console.log(user)
+  const roleAdmin = user['https://example-api/role'].find(element => element === 'Admin');
+  console.log("Here ",roleAdmin, name)
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -94,7 +95,7 @@ function ListMateriele() {
             icon: () => <AddBox style={{color: 'blue'}}/>,
             tooltip: 'Ajoute nouveau materiel',
             isFreeAction: true,
-            hidden: role[0] !== 'admin',
+            hidden: roleAdmin === undefined,
             onClick: () => {
               setOpenPopup(true)
               console.log("Clicked")
@@ -102,8 +103,8 @@ function ListMateriele() {
           }
         ]}
         editable={{
-          isEditHidden: rowData => role[0] !== 'admin',
-          isDeleteHidden: rowData => role[0] !== 'admin',
+          isEditHidden: rowData =>  roleAdmin === undefined,
+          isDeleteHidden: rowData => roleAdmin === undefined,
           onRowUpdate: (newData, oldData) =>
             new Promise((resolve, reject) => {
               setTimeout(() => {

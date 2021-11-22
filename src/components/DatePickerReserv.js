@@ -8,10 +8,21 @@ export default function DatePickerReserv(props) {
   /* const [from, setStartDate] = useState(null);
   const [to, setEndDate] = useState(null);
  */
-  function handleDayClick(day) {
-    const range = DateUtils.addDayToRange(day, {from: from, to: to});
-    setStartDate(range.from);
-    setEndDate(range.to)
+  function handleDayClick(day) {   
+    const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+    const diffDays = Math.round(Math.abs((day - from) / oneDay));
+    const range = DateUtils.addDayToRange(day, undefined);
+    
+    if(diffDays <= 10){
+      const range = DateUtils.addDayToRange(day, {from: from, to: to});
+      setStartDate(range.from);
+      setEndDate(range.to)
+    }
+    else {
+      setStartDate(range.from);
+      setEndDate(range.to)
+    }
+    
   }
 
   function handleResetClick() {
@@ -20,7 +31,12 @@ export default function DatePickerReserv(props) {
   }
 
   const modifiers = { start: from, end: to };
-
+  
+  function addDays(date, days) {
+    var result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
   return (
     <div className="RangeExample">
       <p style={{color: !from || !to ? 'red' : null}}>
@@ -42,6 +58,7 @@ export default function DatePickerReserv(props) {
         selectedDays={[from, { from, to }]}
         modifiers={modifiers}
         onDayClick={handleDayClick}
+        disabledDays={{ before: from , after: addDays(from, 10)}}
       />
       <Helmet>
         <style>{`

@@ -1,6 +1,6 @@
-import React, { useEffect, useState, forwardRef, Ima } from 'react'
+import React, { useEffect, useState, forwardRef } from 'react';
 import UserDataService from "../services/user.service";
-import MaterialTable from 'material-table'
+import MaterialTable from 'material-table';
 import AddBox from '@material-ui/icons/AddBox';
 import ArrowDownward from '@material-ui/icons/ArrowDownward';
 import Check from '@material-ui/icons/Check';
@@ -16,19 +16,17 @@ import Remove from '@material-ui/icons/Remove';
 import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
-import {Container} from 'react-bootstrap'
-import AddMateriele from './AddMateriele';
-import ModalPopup from './ModalPopup';
+import {Container} from 'react-bootstrap';
 import {useAuth0} from "@auth0/auth0-react"
+import TokenDataService from "../services/token.service"
 
 
 function ListUsers() {
   //const [user, loading, error] = useAuthState(auth);
   const [allUsers, setAllUsers] = useState([])
-  const {user, getAccessTokenSilently} = useAuth0()
-  const { uid, name, picture, email } = user;
-  const role = user['https://example-api/roles'];
-  console.log("Here ",role[0], name)
+  const {user, isAuthenticated} = useAuth0()
+  const { uid, name } = user;
+  const roleAdmin = user['https://example-api/role'].find(element => element === 'Admin');
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -51,14 +49,20 @@ function ListUsers() {
   };
 
   const getAllUsers = async () => {
-    UserDataService.getAll()
-    .then(response => {
-      
-      setAllUsers(response.data);
-    })
-    .catch((e) => {
-      console.log(e);
-    });
+    /* if(isAuthenticated && roleAdmin !== undefined){
+      TokenDataService.getApiAccessToken().then(response => {
+        console.log(response)
+        UserDataService.getAll()
+          .then(response => {
+            
+            setAllUsers(response.data);
+          })
+          .catch((e) => {
+            console.log(e);
+          });
+      });
+    } */
+    
   };
 
   useEffect(() =>{
@@ -84,7 +88,7 @@ function ListUsers() {
             icon: () => <AddBox style={{color: 'blue'}}/>,
             tooltip: 'Ajoute nouveau materiel',
             isFreeAction: true,
-            hidden: role[0] !== 'admin',
+            hidden: roleAdmin === undefined,
             onClick: () => {
               setOpenPopup(true)
               console.log("Clicked")
@@ -92,8 +96,8 @@ function ListUsers() {
           }
         ]}
         editable={{
-          isEditHidden: rowData => role[0] !== 'admin',
-          isDeleteHidden: rowData => role[0] !== 'admin',
+          isEditHidden: rowData => roleAdmin === undefined,
+          isDeleteHidden: rowData => roleAdmin === undefined,
           onRowUpdate: (newData, oldData) =>
             new Promise((resolve, reject) => {
               setTimeout(() => {
