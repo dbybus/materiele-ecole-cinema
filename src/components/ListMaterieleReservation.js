@@ -206,7 +206,7 @@ function ListMaterieleReservation(props) {
           }
         })
       ]}
-    title="Liste des matériaux"
+    title="Liste du matériél"
     />
   </Container>
    

@@ -7,10 +7,9 @@ import { convertDateToFr, calcDays, calcTotalPrice } from "./common";
 import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import GeneratePdf from "./GeneratePdf";
-import { useLocation} from "react-router-dom"
 import { calcQuantiteReserve } from "./common";
 import {
-    ScheduleComponent, Day, Week, WorkWeek, Agenda as Agenda, Month, TimelineMonth, Inject,
+    ScheduleComponent, Agenda as Agenda, Month, TimelineMonth, Inject,
     ViewsDirective, ViewDirective
   } from '@syncfusion/ej2-react-schedule';
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
@@ -227,14 +226,11 @@ function Reservation() {
                     editorTemplate={editorTemplate} popupOpen={onPopupOpen}
                 >
                     <ViewsDirective>
-                        <ViewDirective option='Day' />
-                        <ViewDirective option='Week' />
-                        <ViewDirective option='WorkWeek' />
                         <ViewDirective option='Month' />
                         <ViewDirective option='TimelineMonth' />
                         <ViewDirective option='Agenda' />
                     </ViewsDirective>
-                    <Inject services={[Day, Week, WorkWeek, Agenda, TimelineMonth,  Month]} />
+                    <Inject services={[Agenda, TimelineMonth,  Month]} />
                 </ScheduleComponent>
             </div>
             }

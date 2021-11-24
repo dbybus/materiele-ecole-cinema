@@ -171,7 +171,7 @@ const AddMateriele = (props) => {
                     <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={degre} onChange={(e) => setDegre(e.target.value)}>
                         <option value="0">Réal. 1ère</option>
                         <option value="1">Réal. 2em</option>
-                        <option value="2">Jurnalisme</option>
+                        <option value="2">Journalisme</option>
                     </Form.Select>
                 </Form.Group>
                 <Form.Group as={Col} md="4" controlId="validationCustom03">

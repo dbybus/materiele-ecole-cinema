@@ -55,9 +55,9 @@ function NavBar(){
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav" style={{paddingLeft: 100}}>
             <Nav className="mr-auto">
-                <Nav.Link href="/Reservation">Reservation</Nav.Link>
-                <Nav.Link href="/ListMateriele">Materiels</Nav.Link>
-                <Nav.Link href="/ListNotApprovedReservations" style={{visibility: adminRole !== undefined || profRole !== undefined ? 'visible' : 'hidden'}}>Valider des reservation
+                <Nav.Link href="/Reservation">Réservation</Nav.Link>
+                <Nav.Link href="/ListMateriele">Matériel</Nav.Link>
+                <Nav.Link href="/ListNotApprovedReservations" style={{visibility: adminRole !== undefined || profRole !== undefined ? 'visible' : 'hidden'}}>Réservation à valider
                   <Badge color="secondary" badgeContent={nonApproved} style={{paddingLeft: 5}}>
                     <FaBell />{" "}
                   </Badge>

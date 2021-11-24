@@ -48,3 +48,16 @@ module.exports.calcQuantiteReserve = function(materiel, listMateriel){
         listMateriel.push(materiel)
     }
 }
+
+module.exports.enumToDegree = function(enumDegree){
+    switch(enumDegree) {
+        case 0:
+            return 'Réal. 1ère';
+        case 1:
+            return 'Réal. 2em';
+        case 1:
+            return 'Journalisme';
+        default:
+          return 'Aucun';
+      }
+}

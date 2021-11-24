@@ -21,6 +21,7 @@ import AddMateriele from './AddMateriele';
 import ModalPopup from './ModalPopup';
 import {useAuth0} from "@auth0/auth0-react"
 import {Select, MenuItem} from '@material-ui/core'
+import {enumToDegree} from './common'
 
 function ListMateriele() {
   //const [user, loading, error] = useAuthState(auth);
@@ -88,7 +89,7 @@ function ListMateriele() {
           { title: 'Tarif', field: 'tarifLoc'},
           { title: 'Valeur', field: 'valRemp'},
           { title: 'Lieu', field: 'lieu'},
-          { title: 'Degré', field: 'degre'},
+          { title: 'Degré', field: 'degre', render: rowData => enumToDegree(rowData.degre)},
         ]}
         data={allMateriele}
         
@@ -126,7 +127,7 @@ function ListMateriele() {
           },
           {
             icon: () => <AddBox style={{color: 'blue'}}/>,
-            tooltip: 'Ajoute nouveau materiel',
+            tooltip: 'Ajouter nouveau matériel',
             isFreeAction: true,
             hidden: roleAdmin === undefined,
             onClick: () => {
@@ -173,7 +174,7 @@ function ListMateriele() {
               }, 1000)
             }),
         }}
-      title="Liste des matériaux"
+      title="Liste du matériél"
       />
 
       <ModalPopup title="Ajoute nouveau materiel"  openPopup={openPopup} setOpenPopup={setOpenPopup}>
