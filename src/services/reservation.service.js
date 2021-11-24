@@ -10,7 +10,9 @@ class ReservationDataService {
       }
     })
   }
-
+  get(id) {
+    return http.get(`/reservation/findOne/${id}`);
+  }
   async create(data) {
     return http.post("/reservation/create", data)
       .then(result => {

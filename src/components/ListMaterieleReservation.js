@@ -25,7 +25,8 @@ function ListMaterieleReservation(props) {
 
   const { materiel, setMateriel, materielReserve, visitedStep2, allMateriele, setAllMateriele} = props;
   const [loading, setLoading] = useState(true);
-  const [filterCategorie, setFilterCategorie] = useState("all")
+  const [filterCategorie, setFilterCategorie] = useState("all");
+  const [filterLieu, setFilterLieu] = useState("all");
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -76,8 +77,8 @@ function ListMaterieleReservation(props) {
         }
       })
       //console.log("MATOS RESERVE ", materielReserve)
-      setAllMateriele(filterCategorie=== 'all' ? newArray : newArray.filter(item => item.categorie === filterCategorie))
-      
+      //setAllMateriele(filterCategorie=== 'all' ? newArray : newArray.filter(item => item.categorie === filterCategorie))
+      setAllMateriele(filterCategorie === 'all' && filterLieu === 'all'? newArray : newArray.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') || (item.lieu === filterLieu &&  filterCategorie === 'all') || (item.categorie === filterCategorie && item.lieu === filterLieu)));
   };
 
   useEffect(() =>{
@@ -91,7 +92,7 @@ function ListMaterieleReservation(props) {
       setLoading(false);
     }
 
-  },[loading, filterCategorie])
+  },[loading, filterCategorie, filterLieu])
 
   return (
     loading ? <Container className="d-flex justify-content-center align-items-center"><Loading /></Container> :  
@@ -129,6 +130,19 @@ function ListMaterieleReservation(props) {
           <MenuItem value={"autres"}>Autres</MenuItem>
         </Select>,
           tooltip: 'Choisir la catégorie',
+          isFreeAction: true,
+        },
+        {
+          icon: () => <Select
+          style={{width:100}}
+          value={filterLieu}
+          onChange={(e)=>setFilterLieu(e.target.value)}
+        >
+          <MenuItem value={"all"}><em>All</em></MenuItem>
+          <MenuItem value={"Geneve"}>Genève</MenuItem>
+          <MenuItem value={"Lausanne"}>Lausanne</MenuItem>
+        </Select>,
+          tooltip: 'Choisir l\'emplacement',
           isFreeAction: true,
         },
         rowData => ({

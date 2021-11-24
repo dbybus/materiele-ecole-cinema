@@ -1,8 +1,4 @@
 var axios = require("axios").default;
-import http from "../http-common";
-var request = require("request");
-
-
 const {verifyToken, signRefreshToken} = require('../../src/jwtverify');
 
 class TokenService {

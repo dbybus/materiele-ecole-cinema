@@ -27,6 +27,7 @@ function ListMateriele() {
   const [allMateriele, setAllMateriele] = useState([])
   const [openPopup, setOpenPopup] = useState(false)
   const [filterCategorie, setFilterCategorie] = useState("all");
+  const [filterLieu, setFilterLieu] = useState("all");
   //const [token, setToken] = useState('')
   const {user, getAccessTokenSilently} = useAuth0()
   const { uid, name, picture, email } = user;
@@ -57,8 +58,8 @@ function ListMateriele() {
   const getAllMateriele = async () => {
     MaterieleDataService.getAll()
     .then(response => {
-      
-      setAllMateriele(filterCategorie === 'all' ? response.data: response.data.filter(item => item.categorie === filterCategorie));
+
+      setAllMateriele(filterCategorie === 'all' && filterLieu === 'all'? response.data: response.data.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') || (item.lieu === filterLieu &&  filterCategorie === 'all') || (item.categorie === filterCategorie && item.lieu === filterLieu)));
     })
     .catch((e) => {
       console.log(e);
@@ -69,7 +70,7 @@ function ListMateriele() {
     if(openPopup === false){
       getAllMateriele();
     }
-  },[openPopup, filterCategorie])
+  },[openPopup, filterCategorie, filterLieu])
 
   return (
     <Container>
@@ -108,6 +109,19 @@ function ListMateriele() {
             <MenuItem value={"autres"}>Autres</MenuItem>
           </Select>,
             tooltip: 'Choisir la catégorie',
+            isFreeAction: true,
+          },
+          {
+            icon: () => <Select
+            style={{width:100}}
+            value={filterLieu}
+            onChange={(e)=>setFilterLieu(e.target.value)}
+          >
+            <MenuItem value={"all"}><em>All</em></MenuItem>
+            <MenuItem value={"Geneve"}>Genève</MenuItem>
+            <MenuItem value={"Lausanne"}>Lausanne</MenuItem>
+          </Select>,
+            tooltip: 'Choisir l\'emplacement',
             isFreeAction: true,
           },
           {

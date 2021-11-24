@@ -19,8 +19,8 @@ const AddReservation = (props) => {
     const [step, setStep] = useState(0);
     const [reservationName, setReservationName] = useState("");
     const [lieu, setLieu] = useState("");
-    const [from, setStartDate] = useState();
-    const [to, setEndDate] = useState();
+    const [from, setStartDate] = useState(null);
+    const [to, setEndDate] = useState(null);
     const [materiel, setMateriel] = useState([]);
     const [quantiteMateriel, setQuantiteMateriel] = useState([]);
     const [creatorId, setCreatorId] = useState("");
@@ -33,6 +33,8 @@ const AddReservation = (props) => {
     const [daysReservation, setDaysReservation] = useState(0)
     const [validated, setValidated] = useState(false);
     const steps = ['Sélectionner les détails de la réservation', 'Sélectionner des matériels', 'Récapitulatif d\'évènement'];
+    const roleAdmin = user['https://example-api/role'].find(element => element === 'Admin');
+    const roleProf = user['https://example-api/role'].find(element => element === 'Prof');
     
     const nextStep = (event) =>{
 
@@ -147,10 +149,15 @@ const AddReservation = (props) => {
             date_end: to.toUTCString(),
             createur: creatorId,
             beneficiaire: creatorEmail,
-            materiel: materiel
+            materiel: materiel,
+            isApproved: false
         };
         
-        console.log(materiel)
+        //Automatically set approve true if role is Admin or Prof
+        if(roleAdmin !== undefined || roleProf !== undefined){
+            data.isApproved = true;
+        }
+
         ReservationDataService.create(data)
             .then(() => {
                 console.log("Created new reservation successfully!");

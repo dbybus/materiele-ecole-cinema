@@ -35,3 +35,16 @@ module.exports.calcTotalPrice = function(materiel){
 
     return total;
 }
+
+module.exports.calcQuantiteReserve = function(materiel, listMateriel){
+    
+    var find = listMateriel.find(mat => mat.id === materiel.id);
+
+    if(find !== undefined){
+        find.quantite += 1;
+        console.log(find)
+    }else{
+        materiel.quantite = 1;
+        listMateriel.push(materiel)
+    }
+}

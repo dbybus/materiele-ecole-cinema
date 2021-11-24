@@ -7,7 +7,8 @@ import { convertDateToFr, calcDays, calcTotalPrice } from "./common";
 import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import GeneratePdf from "./GeneratePdf";
-
+import { useLocation} from "react-router-dom"
+import { calcQuantiteReserve } from "./common";
 import {
     ScheduleComponent, Day, Week, WorkWeek, Agenda as Agenda, Month, TimelineMonth, Inject,
     ViewsDirective, ViewDirective
@@ -27,8 +28,7 @@ L10n.load({
 });
 
 function Reservation() {
-
-    const [allReservations, setAllReservervations] = useState([]);
+    const [approvedReservations, setApprovedReservervations] = useState([]);
     const [toggle, setToggle] = useState(false);
 
     function toggleReservation() {
@@ -39,7 +39,7 @@ function Reservation() {
         ReservationDataService.getAll()
         .then(response => {
             console.log(response.data)
-            setAllReservervations(response.data);
+            setApprovedReservervations(response.data.filter(item => item.isApproved));
         })
         .catch((e) => {
           console.log(e);
@@ -52,26 +52,15 @@ function Reservation() {
 
     const agendaItems = () => {
         var reservation = [];  
-       
-        
-        allReservations.map(item => {
+
+        approvedReservations.map(item => {
             let start_date = new Date(item.date_start);
             let end_date = new Date(item.date_end);
             var materiels = [];
-            console.log(item)
-            
+
             item.getReservation.forEach((element, index) => {
-                var materiel = element.getMateriel;
-                //console.log(item.getReservation[index].getMateriel.id)
-
-                var find = materiels.find(mat => mat.id === materiel.id);
-
-                if(find !== undefined){
-                    find.quantite += 1;
-                }else{
-                    materiel.quantite = 1;
-                    materiels.push(materiel)
-                }
+                //console.log("Element ",element)
+                calcQuantiteReserve(element.getMateriel, materiels)
             })
             
             console.log("MATOS ", materiels)
@@ -88,7 +77,7 @@ function Reservation() {
                 lieu: item.lieu
             })
         })
-
+        
         return reservation;
     }
 
@@ -96,55 +85,53 @@ function Reservation() {
         //console.log(props)
         if(props.elementType === 'event'){
             return (
-               
-                    <div>
-                        {
-                            <div className="e-date-time">
-                                <div><FaRegCalendarAlt size={14}/></div>
-                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                    du {convertDateToFr(props.StartTime)} au {convertDateToFr(props.EndTime)} ({calcDays(props.StartTime, props.EndTime)} jours)
-                                </div>                
-                            </div>
-                        }
-                        {
-                            <div className="e-date-time">
-                                <div><FaRegEnvelope size={14}/></div>
-                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                    {props.beneficiaire}
-                                </div>                
-                            </div>
-                        }
-                        {
-                            <div className="e-date-time">
-                                <div><FaToolbox  size={14}/></div>
-                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                        <p>Matériel</p>
-                                        <ListGroup variant="flush">
-                                            {props.materiel.map(item =>{
-                                                return(
-                                                    <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label} = ${item.tarifLoc} -.CHF`}</ListGroup.Item>
-                                                ) 
-                                            })}
-                                        </ListGroup>
-                                </div>                
-                            </div>
-                        }
-                        {
-                            <div className="e-date-time">
-                                <div><FaRegFilePdf size={14}/></div>
-                                <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                        <p>Devis</p>
-                                        <PDFDownloadLink  document= {<GeneratePdf reservationName={props.Subject} lieu={props.lieu} from={props.StartTime} to={props.EndTime} 
-                                            quantiteMateriel={props.materiel} totalSum={calcTotalPrice(props.materiel)} daysReservation={calcDays(props.StartTime, props.EndTime)} totalSumWithDays={calcTotalPrice(props.materiel)*calcDays(props.StartTime, props.EndTime)}
-                                            creatorEmail={props.beneficiaire} />} 
-                                            fileName="fee_acceptance.pdf">
-                                            {({ blob, url, loading, error }) => (loading ? 'Chargement du document...' : 'Téléchargez votre devis')}
-                                        </PDFDownloadLink>
-                                </div>                
-                            </div>
-                        }
-                    </div>                                                                      
-               
+                <div>
+                    {
+                        <div className="e-date-time">
+                            <div><FaRegCalendarAlt size={14}/></div>
+                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                du {convertDateToFr(props.StartTime)} au {convertDateToFr(props.EndTime)} ({calcDays(props.StartTime, props.EndTime)} jours)
+                            </div>                
+                        </div>
+                    }
+                    {
+                        <div className="e-date-time">
+                            <div><FaRegEnvelope size={14}/></div>
+                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                {props.beneficiaire}
+                            </div>                
+                        </div>
+                    }
+                    {
+                        <div className="e-date-time">
+                            <div><FaToolbox  size={14}/></div>
+                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                    <p>Matériel</p>
+                                    <ListGroup variant="flush">
+                                        {props.materiel.map(item =>{
+                                            return(
+                                                <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label} = ${item.tarifLoc} -.CHF`}</ListGroup.Item>
+                                            ) 
+                                        })}
+                                    </ListGroup>
+                            </div>                
+                        </div>
+                    }
+                    {
+                        <div className="e-date-time">
+                            <div><FaRegFilePdf size={14}/></div>
+                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
+                                    <p>Devis</p>
+                                    <PDFDownloadLink  document= {<GeneratePdf reservationName={props.Subject} lieu={props.lieu} from={props.StartTime} to={props.EndTime} 
+                                        quantiteMateriel={props.materiel} totalSum={calcTotalPrice(props.materiel)} daysReservation={calcDays(props.StartTime, props.EndTime)} totalSumWithDays={calcTotalPrice(props.materiel)*calcDays(props.StartTime, props.EndTime)}
+                                        creatorEmail={props.beneficiaire} />} 
+                                        fileName="fee_acceptance.pdf">
+                                        {({ blob, url, loading, error }) => (loading ? 'Chargement du devis...' : 'Téléchargez votre devis')}
+                                    </PDFDownloadLink>
+                            </div>                
+                        </div>
+                    }
+                </div>                                                                      
             );
         }else{
             return null;
@@ -205,8 +192,13 @@ function Reservation() {
                         </td>
                     </tr>
                     <tr>
-                        <td className="e-textlabel">Status</td><td style={{ colspan: '4' }}>
+                        <td className="e-textlabel">Beneficiaire</td><td style={{ colspan: '4' }}>
                             <input id="beneficiaire" className="e-field e-input" type="text" name="beneficiaire" style={{ width: '100%' }} />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="e-textlabel">Lieu</td><td style={{ colspan: '4' }}>
+                            <input id="lieu" className="e-field e-input" type="text" name="lieu" style={{ width: '100%' }} />
                         </td>
                     </tr>
                     <tr>
@@ -226,7 +218,7 @@ function Reservation() {
 
     return (
         <div>
-            {toggle && <AddReservation allReservations={allReservations} />}
+            {toggle && <AddReservation allReservations={approvedReservations} />}
             {!toggle && 
             <div>
                 <ButtonComponent id='add' title='Add' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>

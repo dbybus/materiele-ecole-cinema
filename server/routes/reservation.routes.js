@@ -8,7 +8,8 @@ module.exports = app => {
   
     // Retrieve all reservations
     router.get("/findAll", reservation.findAll);
-
+    
+    router.get("/findOne/:id", reservation.findOne);
     //Update reservation
     router.put("/update/:id", reservation.update)
 
