@@ -13,7 +13,8 @@ import {
     ViewsDirective, ViewDirective
   } from '@syncfusion/ej2-react-schedule';
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
-import { extend, L10n } from '@syncfusion/ej2-base';
+import { L10n } from '@syncfusion/ej2-base';
+import { useAuth0 } from '@auth0/auth0-react'
 
 L10n.load({
     'en-US': {
@@ -25,32 +26,39 @@ L10n.load({
         },
     }
 });
+import {Button} from '@material-ui/core'
 
 function Reservation() {
     const [approvedReservations, setApprovedReservervations] = useState([]);
     const [toggle, setToggle] = useState(false);
+    const { user } = useAuth0();
+    const [roleAdmin, setRoleAdmin] = useState();
+    const [roleProf, setRoleProf] = useState();
 
     function toggleReservation() {
         setToggle(true);
     }
 
     const getAllReservations = async () => {
-        ReservationDataService.getAll()
-        .then(response => {
-            console.log(response.data)
-            setApprovedReservervations(response.data.filter(item => item.isApproved));
-        })
-        .catch((e) => {
-          console.log(e);
-        });
+        if(user){
+            const reserv = await ReservationDataService.getAll();
+            setApprovedReservervations(user['https://example-api/role'].find(element => element === 'Admin') !== undefined 
+                                    || user['https://example-api/role'].find(element => element === 'Prof') !== undefined 
+                                    ? reserv.data : reserv.data.filter(item => item.isApproved));
+        }
     };
 
     useEffect(() => {
         getAllReservations();
-    }, []);
+    }, [user]);
 
     const agendaItems = () => {
         var reservation = [];  
+        var isReadOnly = true;
+            
+        if(user['https://example-api/role'].find(element => element === 'Admin')  !== undefined || user['https://example-api/role'].find(element => element === 'Prof') !== undefined){
+            isReadOnly = false;
+        }
 
         approvedReservations.map(item => {
             let start_date = new Date(item.date_start);
@@ -62,7 +70,7 @@ function Reservation() {
                 calcQuantiteReserve(element.getMateriel, materiels)
             })
             
-            console.log("MATOS ", materiels)
+            console.log("MATOS ", materiels)           
             
             reservation.push({
                 Id: item.id,
@@ -73,7 +81,9 @@ function Reservation() {
                 materiel:  materiels,
                 beneficiaire: item.beneficiaire,
                 createur: item.createur,
-                lieu: item.lieu
+                lieu: item.lieu,
+                IsReadonly : isReadOnly,
+                isApproved: item.isApproved
             })
         })
         
@@ -162,7 +172,8 @@ function Reservation() {
                 date_start: props.data[0].StartTime,
                 date_end: props.data[0].EndTime,
                 lieu: props.data[0].lieu,
-                beneficiaire: props.data[0].beneficiaire
+                beneficiaire: props.data[0].beneficiaire,
+                isApproved: props.data[0].isApproved
             }
 
             ReservationDataService.update(props.data[0].Id, data).then(() =>
@@ -182,6 +193,7 @@ function Reservation() {
     }
 
     const editorTemplate = (props) =>{
+        console.log(props)
         return (
             <table className="custom-event-editor" style={{ width: '100%', cellpadding: '5' }}>
                 <tbody>
@@ -210,9 +222,22 @@ function Reservation() {
                             <DateTimePickerComponent id="EndTime" format='dd/MM/yy hh:mm a' data-name="EndTime" value={new Date(props.endTime || props.EndTime)} className="e-field"></DateTimePickerComponent>
                         </td>
                     </tr>
+                    <tr>
+                        <td className="e-textlabel">Approver</td><td style={{ colspan: '4' }}>
+                        <input id="isApproved" name="isApproved" className="e-field e-control" type="checkbox"/>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         );
+    }
+
+    const eventRender = (props) => {
+        if(props.data.isApproved){
+            props.element.style.backgroundColor = 'green'
+        }else{
+            props.element.style.backgroundColor = 'orange'
+        }
     }
 
     return (
@@ -223,7 +248,7 @@ function Reservation() {
                 <ButtonComponent id='add' title='Add' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
                 <ScheduleComponent width='100%' height='550px' currentView='TimelineMonth'
                     selectedDate={new Date(2021, 10, 1)} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
-                    editorTemplate={editorTemplate} popupOpen={onPopupOpen}
+                    editorTemplate={editorTemplate} popupOpen={onPopupOpen} eventRendered={eventRender}
                 >
                     <ViewsDirective>
                         <ViewDirective option='Month' />

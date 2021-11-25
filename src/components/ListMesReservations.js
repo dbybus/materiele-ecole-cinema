@@ -20,9 +20,11 @@ import {Container} from 'react-bootstrap'
 import { calcQuantiteReserve, convertDateToFr } from "./common";
 import { ListGroup } from "react-bootstrap";
 import { FcApproval, FcDisclaimer } from "react-icons/fc";
+import { useAuth0 } from '@auth0/auth0-react'
 
-function ListNotApprovedReservations() {
-  const [noApprovedReservervations, setNoApprovedReservervations] = useState();
+function ListMesReservations() {
+  const [myReservations, setMyReservations] = useState();
+  const { user } = useAuth0();
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -45,14 +47,16 @@ function ListNotApprovedReservations() {
   };
 
   const getAllReservations = async () => {
-    ReservationDataService.getAll()
-    .then(response => {
-        console.log(response.data)
-        setNoApprovedReservervations(response.data.filter(item => !item.isApproved));
-    })
-    .catch((e) => {
-      console.log(e);
-    });
+    if(user){
+      console.log(user)
+      ReservationDataService.getAll()
+      .then(response => {
+          setMyReservations(response.data.filter(item => item.beneficiaire === user.email));
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+    }
   };
  
   useEffect(() =>{
@@ -79,53 +83,34 @@ function ListNotApprovedReservations() {
       <MaterialTable 
         icons={tableIcons}
         options = {{
-          rowStyle: (index) => index%2 == 0 ? {background:"#f5f5f5"} : null 
+          rowStyle: (rowData) => rowData.isApproved ? {background:"green"} : {background:"orange"},
+          paging: false,
+          sorting: true
         }}
-        
         columns={[
           { title: 'Titre', field: 'titre', editable: 'never' },
-          { title: 'Lieu', field: 'lieu', editable: 'never'},
+          { title: 'Lieu', field: 'lieu', editable: 'never', hidden: true},
           { title: 'Bénéficiaire', field: 'beneficiaire', editable: 'never'},
           { title: 'Date debut', field: 'date_start', render: rowData => (
             <div>
-              {convertDateToFr(rowData)}
+              {convertDateToFr(rowData.date_start)}
             </div>
           ),},
           { title: 'Date fin', field: 'date_end', render: rowData => (
             <div>
-              {convertDateToFr(rowData)}
+              {convertDateToFr(rowData.date_end)}
             </div>
           ),},
+          { title: 'État de la réservation', field: 'isApproved', editable: 'never', defaultSort: 'asc', render: rowData => (
+            <div>
+              {!rowData.isApproved ? 'En attente' : 'Approuvé'}
+            </div>
+          ),}
         ]}
-        data={noApprovedReservervations}
-        title="Valider des reservation"
-        actions={[
-          (rowData) => ({
-            icon: () => <FcApproval />,
-            tooltip: 'Accepter',
-            onClick: () => {
-              const dataDelete = [...noApprovedReservervations];
-              const index = rowData.tableData.id;
-              rowData.isApproved = true;
-              ReservationDataService.update(rowData.id, rowData);
-              dataDelete.splice(index, 1);
-              setNoApprovedReservervations([...dataDelete]);
-            }
-          }),
-          (rowData) => ({
-            icon: () => <FcDisclaimer />,
-            tooltip: 'Refuser',
-            onClick: () => {
-              const dataDelete = [...noApprovedReservervations];
-              const index = rowData.tableData.id;
-              ReservationDataService.delete(rowData.id);
-              dataDelete.splice(index, 1);
-              setNoApprovedReservervations([...dataDelete]);
-            }
-          })
-        ]}
+        data={myReservations}
+        title="Mes réservations"
         detailPanel={ rowData => {
-            return <div>{ProductList(rowData)},{}</div>
+            return <div>{ProductList(rowData)}</div>
           } 
         }
       />
@@ -135,4 +120,4 @@ function ListNotApprovedReservations() {
   )
 }
 
-export default ListNotApprovedReservations
+export default ListMesReservations

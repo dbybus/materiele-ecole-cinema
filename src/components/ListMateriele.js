@@ -177,7 +177,7 @@ function ListMateriele() {
       title="Liste du matériél"
       />
 
-      <ModalPopup title="Ajoute nouveau materiel"  openPopup={openPopup} setOpenPopup={setOpenPopup}>
+      <ModalPopup title="Ajouter nouveau matériel"  openPopup={openPopup} setOpenPopup={setOpenPopup}>
         <AddMateriele setOpenPopup={setOpenPopup} method="post" enctype="multipart/form-data" />
       </ModalPopup>
     </Container>

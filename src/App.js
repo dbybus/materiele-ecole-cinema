@@ -11,6 +11,7 @@ import ProtectedRoute from "./auth/protected-route";
 import AddReservation from "./components/AddReservation";
 import ListMaterieleReservation from './components/ListMaterieleReservation';
 import ListNotApprovedReservations from './components/ListNotApprovedReservations';
+import ListMesReservations from './components/ListMesReservations';
 
 function App() {
   const { isLoading } = useAuth0();
@@ -34,6 +35,7 @@ function App() {
           <ProtectedRoute path="/AddReservation" component={AddReservation} />
           <ProtectedRoute path="/ListMaterieleReservation" component={ListMaterieleReservation} />
           <ProtectedRoute path="/ListNotApprovedReservations" component={ListNotApprovedReservations} />
+          <ProtectedRoute path="/ListMesReservations" component={ListMesReservations} />
         </Switch>
       </div>
       </Router>

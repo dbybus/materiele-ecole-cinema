@@ -11,6 +11,7 @@ function NavBar(){
   const { user, getAccessTokenSilently} = useAuth0();
   const [name, setName] = useState("");
   const [picture, setPicture] = useState("");
+  const [myNonApproved, setMyNonApproved] = useState(0);
   const [nonApproved, setNonApproved] = useState(0);
   const [adminRole, setAdminRole] = useState();
   const [profRole, setProfRole] = useState();
@@ -30,7 +31,8 @@ function NavBar(){
           
           ReservationDataService.getAll()
           .then(response => {
-              setNonApproved(response.data.filter(item => !item.isApproved).length);
+              setNonApproved(response.data.filter(item => !item.isApproved).length)
+              setMyNonApproved(response.data.filter(item => !item.isApproved && user.email === item.beneficiaire).length);
           })
           .catch((e) => {
             console.log(e);
@@ -59,6 +61,11 @@ function NavBar(){
                 <Nav.Link href="/ListMateriele">Matériel</Nav.Link>
                 <Nav.Link href="/ListNotApprovedReservations" style={{visibility: adminRole !== undefined || profRole !== undefined ? 'visible' : 'hidden'}}>Réservation à valider
                   <Badge color="secondary" badgeContent={nonApproved} style={{paddingLeft: 5}}>
+                    <FaBell />{" "}
+                  </Badge>
+                </Nav.Link>
+                <Nav.Link href="/ListMesReservations" >Mes Réservation
+                  <Badge color="secondary" badgeContent={myNonApproved} style={{paddingLeft: 5}}>
                     <FaBell />{" "}
                   </Badge>
                 </Nav.Link>
