@@ -103,7 +103,7 @@ function ListMesReservations() {
           ),},
           { title: 'État de la réservation', field: 'isApproved', editable: 'never', defaultSort: 'asc', render: rowData => (
             <div>
-              {!rowData.isApproved ? 'En attente' : 'Approuvé'}
+              {!rowData.isApproved ? 'En attente' : 'Validé'}
             </div>
           ),}
         ]}

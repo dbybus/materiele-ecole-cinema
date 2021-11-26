@@ -110,7 +110,6 @@ const AddMateriele = (props) => {
                         name="file"
                         //value={image}
                         onChange={onChangePicture}
-                        /* isInvalid={!!errors.file} */
                     />
                     <Form.Control type="hidden" value={url_pic} />
                     {/* <Form.Control.Feedback type="invalid" tooltip>
