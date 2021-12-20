@@ -25,7 +25,6 @@ import {enumToDegree, setImagePath} from './common'
 import {Button} from '@material-ui/core'
 
 function ListMateriele() {
-  //const [user, loading, error] = useAuthState(auth);
   const [allMateriele, setAllMateriele] = useState([])
   const [openPopup, setOpenPopup] = useState(false)
   const [filterCategorie, setFilterCategorie] = useState("all");
@@ -60,7 +59,7 @@ function ListMateriele() {
   const getAllMateriele = async () => {
     MaterieleDataService.getAll()
     .then(response => {
-
+      console.log(response)
       setAllMateriele(filterCategorie === 'all' && filterLieu === 'all'? response.data: response.data.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') || (item.lieu === filterLieu &&  filterCategorie === 'all') || (item.categorie === filterCategorie && item.lieu === filterLieu)));
     })
     .catch((e) => {
@@ -85,32 +84,30 @@ function ListMateriele() {
           { title: 'Nom', field: 'label' },
           { title: 'Reference', field: 'ref' },
           { title: 'Image', field: 'image', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />,
-          editComponent: (props) => {
-            //console.log(props);
-            return (
-              <div>
-                <input
-                type="file"
-                style={{ display: 'none' }}
-                id="raised-button-file"
-                onChange={(e) => {
-                 // console.log(e.target.files[0])
-                  props.rowData.url_pic = "/img/materiels/"+ setImagePath(e.target.files[0].name);
-                  props.onChange(e.target.files[0])
-                }}
-              />
-              <label htmlFor="raised-button-file">
-                <Button variant="contained" color="primary"component="span">
-                  Upload
-                </Button>
-              </label>
-              </div>
-               
-            );
+            editComponent: (props) => {
+              //console.log(props);
+              return (
+                <div>
+                  <input
+                  type="file"
+                  style={{ display: 'none' }}
+                  id="raised-button-file"
+                  onChange={(e) => {
+                  // console.log(e.target.files[0])
+                    props.rowData.url_pic = "/img/materiels/"+ setImagePath(e.target.files[0].name);
+                    props.onChange(e.target.files[0])
+                  }}
+                />
+                <label htmlFor="raised-button-file">
+                  <Button variant="contained" color="primary"component="span">
+                    Upload
+                  </Button>
+                </label>
+                </div>
+                
+              );
+            },
           },
-          /* render: (rowdata) => (
-            <input type="checkbox" checked={rowdata.booleanValue} />
-          )  */},
           { title: 'Quantite', field: 'Qtotale'},
           { title: 'Category', field: 'categorie'},
           { title: 'Tarif', field: 'tarifLoc'},
@@ -165,8 +162,8 @@ function ListMateriele() {
         ]}
          
         editable={{
-          isEditHidden: rowData =>  roleAdmin === undefined,
-          isDeleteHidden: rowData => roleAdmin === undefined,
+          isEditHidden: () =>  roleAdmin === undefined,
+          isDeleteHidden: () => roleAdmin === undefined,
           onRowUpdate: (newData, oldData) =>
             new Promise((resolve, reject) => {
               setTimeout(() => {
@@ -175,22 +172,24 @@ function ListMateriele() {
                 const index = oldData.tableData.id;
                 MaterieleDataService.update(dataUpdate[index].id, newData).then(() => {
                   
-                  const formData = new FormData();
-                  formData.append('file', newData.image);
-                  
-                  MaterieleDataService.uploadImgMat(formData).then(()=>{
+                  if(newData.image){
+                    const formData = new FormData();
+                    formData.append('file', newData.image);
                     
-                    console.log("New image was uploaded succesfully")
-                    
-                    if(oldData.url_pic !== ''){
-                      let data ={
-                        url_pic: oldData.url_pic
+                    MaterieleDataService.uploadImgMat(formData).then(()=>{
+                      
+                      console.log("New image was uploaded succesfully")
+                      
+                      if(oldData.url_pic !== ''){
+                        let data ={
+                          url_pic: oldData.url_pic
+                        }
+        
+                        MaterieleDataService.deleteImgMat(data).then(() => console.log('Old image was removed '));
                       }
-      
-                      MaterieleDataService.deleteImgMat(data).then(() => console.log('Old image was removed '));
-                    }
-                    
-                  });
+                      
+                    });
+                  }
                 }).catch(error => console.log(error));
 
                 dataUpdate[index] = newData;

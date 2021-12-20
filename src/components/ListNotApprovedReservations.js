@@ -88,12 +88,12 @@ function ListNotApprovedReservations() {
           { title: 'Bénéficiaire', field: 'beneficiaire', editable: 'never'},
           { title: 'Date debut', field: 'date_start', render: rowData => (
             <div>
-              {convertDateToFr(rowData)}
+              {convertDateToFr(rowData.date_start)}
             </div>
           ),},
           { title: 'Date fin', field: 'date_end', render: rowData => (
             <div>
-              {convertDateToFr(rowData)}
+              {convertDateToFr(rowData.date_end)}
             </div>
           ),},
         ]}

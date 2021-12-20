@@ -13,18 +13,18 @@ const AddMateriele = (props) => {
     const [sousCateg, setSousCateg] = useState(""); //Ajouter plus tard dans view
     const [image, setImage] = useState(null); //Gerrer les photo plus tard
     const [Qtotale, setQtotale] = useState("");
-    const [categorie, setCategorie] = useState("");
+    const [categorie, setCategorie] = useState("Autres");
     const [tarifLoc, setTarifLoc] = useState("");
     const [valRemp, setValRemp] = useState("");
     const [dateAchat, setDateAchat] = useState(new Date());
     const [ownerExt, setOwnerExt] = useState(""); //Ajouter plus tard dans view
     const [remarque, setRemarque] = useState(""); //Ajouter plus tard dans view
-    const [degre, setDegre] = useState("");
-    const [lieu, setLieu] = useState("");
+    const [degre, setDegre] = useState("0");
+    const [lieu, setLieu] = useState("Geneve");
     const [url_pic, setUrl_Pic] = useState("");
     
     const handleSubmitForm = (event) => {      
-        
+
         if(label === '' || lieu === '' || ref === '' || categorie === '' || tarifLoc === '' || valRemp === '' || Qtotale === ''){
             event.preventDefault();
             event.stopPropagation();
@@ -69,13 +69,13 @@ const AddMateriele = (props) => {
     };
 
     const addImage = async () =>{
-
-        const formData = new FormData();
-        formData.append('file', image);
-
-        MaterieleDataService.uploadImgMat(formData);
-    } 
-
+        if(image){
+            const formData = new FormData();
+            formData.append('file', image);
+            MaterieleDataService.uploadImgMat(formData);
+        } 
+    }
+       
     return (
         <Form noValidate validated={validated}>
             <Row className="mb-3">

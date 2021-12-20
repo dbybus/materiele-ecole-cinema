@@ -35,6 +35,7 @@ exports.create = async (req, res) => {
       return;
     }
 
+    console.log(req.body.date_start)
     // Create a reservation json object
     const reservation = {
       titre: req.body.titre,
@@ -98,6 +99,84 @@ function addMaterial(reservationId, materialId){
     });
 };
 
+// Update a reservation by the id in the request
+exports.update = (req, res) => {
+
+  if(req.headers['authorization']){
+
+    //Verify authorization
+    const token = getBearerToken(req.headers['authorization']);
+    verifyToken(token, req, res);
+    verifyPermissionExists(req,res);
+
+    if(req.payload.permissions[0] === 'write:materiels'){
+      const id = req.params.id;
+
+      const reservation = {
+        titre: req.body.titre,
+        lieu: req.body.lieu,
+        date_start: req.body.date_start,
+        date_end: req.body.date_end,
+        createur: req.body.createur,
+        beneficiaire: req.body.beneficiaire,
+        isApproved: req.body.isApproved
+      };
+      
+      Reservation.update(reservation, {
+        where: { id: id }
+      })
+        .then(num => {
+          if (num == 1) {
+            res.send({
+              message: "Reservation was updated successfully."
+            });
+          } else {
+            res.send({
+              message: `Cannot update Reservation with id=${id}. Maybe Tutorial was not found or req.body is empty!`
+            });
+          }
+        })
+        .catch(err => {
+          res.status(500).send({
+            message: "Error updating Reservation with id=" + id
+          });
+        });
+
+        req.body.materiel.forEach(element => {
+          updateMaterial(id, element);
+        });
+    }
+  }
+};
+
+function updateMaterial(reservationId, materiel){
+  console.log(materiel)
+  MaterielReservation.destroy({
+    where: { reservationId: reservationId }
+  })
+    .then(() => {      
+      try {
+        if(materiel.quantite > 1){
+          var count = 0;
+          while(count < materiel.quantite){
+            addMaterial(reservationId, materiel.id);
+            count++;
+          }
+        }else if(materiel.quantite > 0){
+          addMaterial(reservationId, materiel.id);
+        }
+        
+        console.log("Material in reservation was updated succesfully");
+      } catch (error) {
+        console.log(`Error updating Reservation with id=${reservationId}, materielId=${materiel.id} with error=${error}.`);
+      }
+    })
+    .catch(err => {
+      console.log(`Error updating Reservation with id=${reservationId} with error=${err}.`);
+    });
+
+};
+
 // Retrieve all Reservations from the database.
 exports.findAll = (req, res) => {
 
@@ -157,41 +236,7 @@ exports.findOne = (req, res) => {
   }
 };
 
-// Update a reservation by the id in the request
-exports.update = (req, res) => {
 
-  if(req.headers['authorization']){
-
-    //Verify authorization
-    const token = getBearerToken(req.headers['authorization']);
-    verifyToken(token, req, res);
-    verifyPermissionExists(req,res);
-
-    if(req.payload.permissions[0] === 'write:materiels'){
-      const id = req.params.id;
-
-      Reservation.update(req.body, {
-        where: { id: id }
-      })
-        .then(num => {
-          if (num == 1) {
-            res.send({
-              message: "Material was updated successfully."
-            });
-          } else {
-            res.send({
-              message: `Cannot update Tutorial with id=${id}. Maybe Tutorial was not found or req.body is empty!`
-            });
-          }
-        })
-        .catch(err => {
-          res.status(500).send({
-            message: "Error updating Material with id=" + id
-          });
-        });
-      }
-    }
-};
 
 // Delete a reservation with the specified id in the request
 exports.delete = (req, res) => {

@@ -236,6 +236,7 @@ exports.uploadImgMat = async (req, res) => {
   
   if(req.headers['authorization']){
     //Verify authorization
+    console.log(req.body)
     const token = getBearerToken(req.headers['authorization']);
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
@@ -299,14 +300,14 @@ exports.download = (req, res) => {
 
 //Integrer cette functionalite dans le la export.delete plus tard 
 exports.deleteImgMat = (req, res) => {
-  console.log(req.body.url_pic)
+  console.log("DELETE IMG ", req.body.url_pic)
   if(req.headers['authorization']){
     //Verify authorization
     const token = getBearerToken(req.headers['authorization']);
     verifyToken(token, req, res);
     verifyPermissionExists(req,res); 
     
-    if(req.payload.permissions[0] === 'write:materiels'){
+    if(req.payload.permissions[0] === 'write:materiels' && req.body.url_pic){
       
       try {
         if (req.body == undefined || req.body.url_pic === '') {

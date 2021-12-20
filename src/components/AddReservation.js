@@ -111,8 +111,10 @@ const AddReservation = (props) => {
     }
     
     const getReservedMaterials = () => {
-        const findByDate = allReservations.filter(item => dateRangeOverlaps(from, to, new Date(item.date_start), Date(item.date_end)));        
+
+        const findByDate = allReservations.filter(item => dateRangeOverlaps(from, to, new Date(item.date_start), new Date(item.date_end)));        
         console.log("FIND BY DATE ", findByDate)
+        console.log(allReservations)
         let reservedMaterialList = [];
     
         Object.keys(findByDate).map((id) => {
@@ -141,12 +143,12 @@ const AddReservation = (props) => {
     };
 
     const submitStep = () => {
-        
+
         let data = {
             titre: reservationName,
             lieu: lieu,
-            date_start: from.toUTCString(),
-            date_end: to.toUTCString(),
+            date_start: from,
+            date_end: to,
             createur: creatorId,
             beneficiaire: creatorEmail,
             materiel: materiel,

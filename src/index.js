@@ -18,6 +18,7 @@ import "../node_modules/@syncfusion/ej2-navigations/styles/material.css";
 import "../node_modules/@syncfusion/ej2-popups/styles/material.css";
 import "../node_modules/@syncfusion/ej2-splitbuttons/styles/material.css";
 import "../node_modules/@syncfusion/ej2-react-schedule/styles/material.css";
+import '../node_modules/moment/locale/fr'
 
 ReactDOM.render(
   <BrowserRouter>

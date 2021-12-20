@@ -12,7 +12,7 @@ module.exports.setImagePath = function(filename){
 
 module.exports.convertDateToFr = function(date){
     moment.locale('FR')
-    
+
     return moment(date).format("DD MMMM YYYY");
 }
 
@@ -42,7 +42,6 @@ module.exports.calcQuantiteReserve = function(materiel, listMateriel){
 
     if(find !== undefined){
         find.quantite += 1;
-        console.log(find)
     }else{
         materiel.quantite = 1;
         listMateriel.push(materiel)

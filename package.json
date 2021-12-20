@@ -9,6 +9,7 @@
     "@react-pdf/renderer": "^2.0.21",
     "@syncfusion/ej2-react-buttons": "^19.3.44",
     "@syncfusion/ej2-react-calendars": "^19.3.53",
+    "@syncfusion/ej2-react-popups": "^19.3.53",
     "@syncfusion/ej2-react-schedule": "^19.3.48",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.1.0",
