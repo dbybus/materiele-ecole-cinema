@@ -1,6 +1,6 @@
 const util = require("util");
 const multer = require("multer");
-const common = require("../src/components/common")
+const common = require("../src/common")
 const path = require("path")
 
 const maxSize = 2 * 2024 * 2024;

@@ -5,6 +5,9 @@ module.exports = (sequelize, Sequelize) => {
         },
         materielId: {
             type: Sequelize.INTEGER
+        },
+        quantite: {
+            type: Sequelize.INTEGER
         }
     }
     );

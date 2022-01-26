@@ -21,7 +21,7 @@ import AddMateriele from './AddMateriele';
 import ModalPopup from './ModalPopup';
 import {useAuth0} from "@auth0/auth0-react"
 import {Select, MenuItem} from '@material-ui/core'
-import {enumToDegree, setImagePath} from './common'
+import {enumToDegree, setImagePath} from '../common'
 import {Button} from '@material-ui/core'
 
 function ListMateriele() {

@@ -61,19 +61,10 @@ function ListMaterieleReservation(props) {
         newArray[index].prixTotal = 0;
 
         //Verify if material is reserved and which quantity 
-        const materielTemp = materielReserve.find(item => item.id_materiel=== element.id);
+        const materielTemp = materielReserve.find(item => item.id === element.id);
         
         if (materielTemp != undefined) {
-
           newArray[index].quantiteDisp = element.Qtotale - materielTemp.quantite;
-          
-          //console.log("Materiel Reserve", materielTemp)
-          //Reduce rezerved quantity from total amount 
-          /* if(element.Qtotale - materielTemp.quantite < 0){
-            element.quantiteDisp = 0;
-          }else{
-            
-          } */
         }
       })
       //console.log("MATOS RESERVE ", materielReserve)
@@ -160,12 +151,18 @@ function ListMaterieleReservation(props) {
               dataUpdate[index].tempMateriel +=1;
               dataUpdate[index].prixTotal += dataUpdate[index].tarifLoc;
               setAllMateriele([...dataUpdate]);
-              setMateriel(oldArray => [...oldArray, {
-                id_materiel: rowData.id,
-                quantite: 1,
-                label: rowData.label,
-                tarifLoc: rowData.tarifLoc
-              }])
+
+              const temp = materiel.find(item => item.id === rowData.id);
+              if(temp !== undefined){
+                temp.quantite += 1; 
+              }else{
+                setMateriel(oldArray => [...oldArray, {
+                  id: rowData.id,
+                  quantite: 1,
+                  label: rowData.label,
+                  tarifLoc: rowData.tarifLoc
+                }])
+              }
             }           
           } 
         }),
@@ -188,7 +185,7 @@ function ListMaterieleReservation(props) {
               dataUpdate[index].prixTotal -= dataUpdate[index].tarifLoc;
               setAllMateriele([...dataUpdate]);
 
-              const temp = materiel.find(item => item.id_materiel === rowData.id)
+              const temp = materiel.find(item => item.id === rowData.id)
               
               if (temp != undefined) {
                 temp.quantite -= 1

@@ -12,10 +12,13 @@ const getBearerToken = (header) => {
 
 const verifyPermissionExists = (req, res) => {
   if (req.payload.permissions.length === 0) {
-    res.status(401).send({
-      message: "You dont have authorization to view this content"
-    });
-    return;
+    const writePermission = req.payload.permissions.find('write:materiels');
+    if(writePermission === undefined){
+      res.status(401).send({
+        message: "You dont have authorization to view this content"
+      });
+      return;
+    }
   }
 };
 
@@ -35,7 +38,6 @@ exports.create = async (req, res) => {
       return;
     }
 
-    console.log(req.body.date_start)
     // Create a reservation json object
     const reservation = {
       titre: req.body.titre,
@@ -52,7 +54,8 @@ exports.create = async (req, res) => {
       .then(data => {
 
         req.body.materiel.forEach(element => {
-          addMaterial(data.id, element.id_materiel)
+          //add many to many relation materiel to reservation
+          addMaterial(data.id, element)
         });
 
         res.send(data);
@@ -66,27 +69,28 @@ exports.create = async (req, res) => {
   }
 };
 
-function addMaterial(reservationId, materialId){
+function addMaterial(reservationId, materiel){
   return Reservation.findByPk(reservationId)
     .then((reservation) => {
       if (!reservation) {
         console.log("Reservation not found!");
         return null;
       }
-      return Materiele.findByPk(materialId).then((materiel) => {
-        if (!materiel) {
+
+      return Materiele.findByPk(materiel.id).then((materielDb) => {
+        if (!materielDb) {
           console.log("Materiel not found!");
           return null;
         }
 
-        //console.log(materiel)
         const reservationTemp = {
           reservationId: reservation.id,
-          materielId: materiel.id
+          materielId: materiel.id,
+          quantite: materiel.quantite
         };
 
         MaterielReservation.create(reservationTemp).then(() => {
-          console.log(`>> added Material id=${materiel.id} to Reservation id=${reservation.id}`);
+          console.log(`>> added Material id=${materielDb.id} to Reservation id=${reservation.id}`);
         }).catch(error => {
           console.log(error)
         });
@@ -108,10 +112,11 @@ exports.update = (req, res) => {
     const token = getBearerToken(req.headers['authorization']);
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
-
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
       const id = req.params.id;
-
+      
       const reservation = {
         titre: req.body.titre,
         lieu: req.body.lieu,
@@ -143,29 +148,21 @@ exports.update = (req, res) => {
         });
 
         req.body.materiel.forEach(element => {
-          updateMaterial(id, element);
+          if(element.quantite !== 0){
+            updateMaterial(id, element);
+          }  
         });
     }
   }
 };
 
 function updateMaterial(reservationId, materiel){
-  console.log(materiel)
   MaterielReservation.destroy({
     where: { reservationId: reservationId }
   })
     .then(() => {      
-      try {
-        if(materiel.quantite > 1){
-          var count = 0;
-          while(count < materiel.quantite){
-            addMaterial(reservationId, materiel.id);
-            count++;
-          }
-        }else if(materiel.quantite > 0){
-          addMaterial(reservationId, materiel.id);
-        }
-        
+      try {       
+        addMaterial(reservationId, materiel);
         console.log("Material in reservation was updated succesfully");
       } catch (error) {
         console.log(`Error updating Reservation with id=${reservationId}, materielId=${materiel.id} with error=${error}.`);
@@ -190,7 +187,7 @@ exports.findAll = (req, res) => {
     
       Reservation.findAll( 
       {
-        include: [{model: MaterielReservation, as:"getReservation", attributes: ['id'], 
+        include: [{model: MaterielReservation, as:"getReservation", attributes: ['id', 'quantite'], 
         include: [{model: Materiele, as:"getMateriel", attributes: ['id','label', 'Qtotale', 'tarifLoc']}]}],
       })
         .then(data => {
@@ -245,8 +242,9 @@ exports.delete = (req, res) => {
     const token = getBearerToken(req.headers['authorization']);
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
-
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
 
       const id = req.params.id;
 
@@ -282,7 +280,9 @@ exports.deleteAll = (req, res) => {
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
     
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
       
       Reservation.destroy({
             where: {},

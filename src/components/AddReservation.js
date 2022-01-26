@@ -6,7 +6,7 @@ import {useAuth0} from "@auth0/auth0-react"
 import ReservationDataService from "../services/reservation.service"
 import { useHistory } from 'react-router';
 import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'
-import { convertDateToFr, calcDays, calcTotalPrice } from './common';
+import { convertDateToFr, calcDays, calcTotalPrice, dateRangeOverlaps } from '../common';
 import GeneratePdf from "./GeneratePdf"
 import { PDFDownloadLink } from '@react-pdf/renderer';
 
@@ -22,7 +22,6 @@ const AddReservation = (props) => {
     const [from, setStartDate] = useState(null);
     const [to, setEndDate] = useState(null);
     const [materiel, setMateriel] = useState([]);
-    const [quantiteMateriel, setQuantiteMateriel] = useState([]);
     const [creatorId, setCreatorId] = useState("");
     const [creatorEmail, setCreatorEmail] = useState("");
     const [materielReserve, setMaterielReserve] = useState([]);
@@ -59,33 +58,11 @@ const AddReservation = (props) => {
         }else if(step === 0){
             setVisitedStep2(false);
             setMateriel([]);
-            setQuantiteMateriel([]);
         }else if(step === 1){
             getReservedMaterials();
         }else if(step === 2){
-            
-            let reservedMaterialList = [];
-            
-            materiel.forEach(item => {
-                var temp = reservedMaterialList.find(element => element.id_materiel === item.id_materiel);
-
-                if(temp !== undefined){
-                    temp.quantite += item.quantite;
-                   
-                }else{
-                    reservedMaterialList.push({
-                        id_materiel: item.id_materiel,
-                        quantite: 1,
-                        label: item.label,
-                        tarifLoc: item.tarifLoc
-                    })
-                }
-
-            })
-
-            setQuantiteMateriel(reservedMaterialList);
             var difference_in_days = calcDays(from, to);
-            var total = calcTotalPrice(reservedMaterialList);  
+            var total = calcTotalPrice(materiel);  
             setTotatSum(total);
             setTotalSumWithDays( total * difference_in_days);
             setDaysReservation(difference_in_days);
@@ -100,46 +77,38 @@ const AddReservation = (props) => {
             setCreatorId([]);
             setCreatorEmail([]);
           };
-    }, [user]) 
-    
-    function dateRangeOverlaps(a_start, a_end, b_start, b_end) {
-        if (a_start <= b_start && b_start <= a_end) return true; // b starts in a
-        if (a_start <= b_end   && b_end   <= a_end) return true; // b ends in a
-        if (b_start <  a_start && a_end   <  b_end) return true; // a in b
-        
-        return false;
-    }
+    }, [user]); 
     
     const getReservedMaterials = () => {
-
-        const findByDate = allReservations.filter(item => dateRangeOverlaps(from, to, new Date(item.date_start), new Date(item.date_end)));        
-        console.log("FIND BY DATE ", findByDate)
-        console.log(allReservations)
+        const findByDate = allReservations.filter(item => dateRangeOverlaps(from.setHours(14, 0, 0 ,0), to.setHours(13, 0, 0 ,0), new Date(item.date_start), new Date(item.date_end)));
         let reservedMaterialList = [];
-    
-        Object.keys(findByDate).map((id) => {
-            console.log(findByDate[id])
-           
-            findByDate[id].getReservation.forEach((element , index) => {
-                var materiel = element.getMateriel;
 
-                const temp = reservedMaterialList.find(item => item.id_materiel === materiel.id )
-                
-                if (temp != undefined) {
-                    console.log("Object found by id ", temp)
-                    temp.quantite += 1;
+        Object.keys(findByDate).map((id) => {
+            findByDate[id].getReservation.forEach((element, index) => {
+                const materiel = element.getMateriel;
+
+                const temp = reservedMaterialList.find(item => item.id === materiel.id);
+
+                if (temp !== undefined) {
+                    temp.quantite += element.quantite;
+
+                    if(findByDate[(+id-1).toString()] !== undefined){
+                        //If current date doesnt overlap next reservation 
+                        if(!dateRangeOverlaps(findByDate[(+id-1).toString()].date_start, findByDate[(+id-1).toString()].date_end, findByDate[id].date_start, findByDate[id].date_end)){
+                            temp.quantite -= element.quantite;
+                        }  
+                    }
                 } else {
                     reservedMaterialList.push({
-                        id_materiel: materiel.id,
-                        quantite: 1
+                        id: materiel.id,
+                        quantite: element.quantite
                     })
-                }              
-            });     
+                }       
+            });
         })
 
-        console.log("LIST SENT TO COMPONENT ", reservedMaterialList)
-        setMaterielReserve(reservedMaterialList)
-        
+        console.log("LIST SENT TO COMPONENT ", reservedMaterialList);
+        setMaterielReserve(reservedMaterialList);
     };
 
     const submitStep = () => {
@@ -147,8 +116,8 @@ const AddReservation = (props) => {
         let data = {
             titre: reservationName,
             lieu: lieu,
-            date_start: from,
-            date_end: to,
+            date_start: from.setHours(14, 0, 0 ,0),
+            date_end: to.setHours(13, 0, 0 ,0),
             createur: creatorId,
             beneficiaire: creatorEmail,
             materiel: materiel,
@@ -251,10 +220,10 @@ const AddReservation = (props) => {
                     <Row className="mb-3">
                         <h5>Matériel</h5>
                         <ListGroup variant="flush">
-                            {quantiteMateriel.map(item =>{
+                            {materiel.map(item =>{
                                 console.log(item)
                                 return(
-                                    <ListGroup.Item key={item.id_materiel}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
+                                    <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
                                 ) 
                             })}
                         </ListGroup>
@@ -268,12 +237,11 @@ const AddReservation = (props) => {
                     </Row>
                     <Row className="mb-3">
                         <PDFDownloadLink  document= {<GeneratePdf reservationName={reservationName} lieu={lieu} from={from} to={to} 
-                            quantiteMateriel={quantiteMateriel} totalSum={totalSum} daysReservation={daysReservation} totalSumWithDays={totalSumWithDays}
+                            quantiteMateriel={materiel} totalSum={totalSum} daysReservation={daysReservation} totalSumWithDays={totalSumWithDays}
                             creatorEmail={creatorEmail} />} 
                             fileName="fee_acceptance.pdf">
                             {({ blob, url, loading, error }) => (loading ? 'Chargement du document...' : 'Téléchargez votre devis')}
                         </PDFDownloadLink>
-                        
                     </Row>
                     <Row className="mb-3">
                         <Button color="primary" variant="contained" onClick={submitStep}>
@@ -287,4 +255,4 @@ const AddReservation = (props) => {
     )
 }
 
-export default AddReservation
+export default AddReservation;

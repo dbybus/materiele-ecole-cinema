@@ -9,7 +9,7 @@ import {
     StyleSheet,
     Image,
   } from '@react-pdf/renderer';
-import { convertDateToFr } from './common';
+import { convertDateToFr } from '../common';
 
 const List = ({ children }) => children;
 

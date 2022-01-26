@@ -29,7 +29,9 @@ exports.create = async (req, res) => {
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
 
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
 
       if (!req.body.label) {
         res.status(400).send({
@@ -140,7 +142,9 @@ exports.update = (req, res) => {
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
 
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
       const id = req.params.id;
 
       Materiele.update(req.body, {
@@ -174,7 +178,9 @@ exports.delete = (req, res) => {
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
 
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
 
       const id = req.params.id;
 
@@ -210,7 +216,9 @@ exports.deleteAll = (req, res) => {
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
     
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
       
       Materiele.destroy({
             where: {},
@@ -241,7 +249,9 @@ exports.uploadImgMat = async (req, res) => {
     verifyToken(token, req, res);
     verifyPermissionExists(req,res);
     
-    if(req.payload.permissions[0] === 'write:materiels'){
+    const writeAccess = req.payload.permissions.find(item => item === 'write:materiels');
+  
+    if(writeAccess !== undefined){
       
       try {
         await uploadFile(req, res);

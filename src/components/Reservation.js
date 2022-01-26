@@ -3,11 +3,10 @@ import ReservationDataService from "../services/reservation.service"
 import AddReservation from "./AddReservation";
 import { FaRegEnvelope, FaRegCalendarAlt, FaToolbox, FaRegFilePdf } from 'react-icons/fa'
 import { ListGroup } from "react-bootstrap";
-import { convertDateToFr, calcDays, calcTotalPrice } from "./common";
+import { convertDateToFr, calcDays, calcTotalPrice } from "../common";
 import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import GeneratePdf from "./GeneratePdf";
-import { calcQuantiteReserve } from "./common";
 import {
     ScheduleComponent, Agenda as Agenda, Month, TimelineMonth, Inject,
     ViewsDirective, ViewDirective
@@ -33,11 +32,8 @@ function Reservation() {
     const [toggle, setToggle] = useState(false);
     const { user } = useAuth0();
     const matos = useRef([]);
-    const [materiel, setMateriel] = useState([]);
     const defaultDialog = useRef(null);
-    const [allMateriele, setAllMateriele] = useState([])
     const materielRef = useRef([]);
-    const allMaterieleRef = useRef([]);
 
     function toggleReservation() {
         setToggle(true);
@@ -52,7 +48,6 @@ function Reservation() {
     };
 
     useEffect(() => {
-        console.log("Saved")
         if(user){
             getAllReservations();
         }
@@ -67,23 +62,20 @@ function Reservation() {
         }
 
         approvedReservations.map(item => {
-            let start_date = new Date(item.date_start);
-            let end_date = new Date(item.date_end);
             var materiels = [];
 
             item.getReservation.forEach((element) => {
-                //console.log("Element ",element)
-                calcQuantiteReserve(element.getMateriel, materiels)
+                element.getMateriel.quantite = element.quantite;
+                materiels.push(element.getMateriel);
             })   
             
-            //console.log(new Date(item.date_end));
             reservation.push({
                 Id: item.id,
                 Subject: item.titre,
-                StartTime: new Date(start_date.getFullYear(), start_date.getMonth(), start_date.getDate()),
-                EndTime : new Date(end_date.getFullYear(), end_date.getMonth(), end_date.getDate(), 23),
+                StartTime: new Date(item.date_start),
+                EndTime : new Date(item.date_end),
                 IsAllDay: false,
-                materiel:  materiels,
+                materiel: materiels,
                 beneficiaire: item.beneficiaire,
                 createur: item.createur,
                 lieu: item.lieu,
@@ -153,8 +145,9 @@ function Reservation() {
     }
 
     const onPopupOpen = (props) =>{
-        console.log(props)
+        console.log("POPUP open ", props)
         let isCell = props.target.classList.contains('e-work-cells') || props.target.classList.contains('e-header-cells');
+        
         if (props.type === "QuickInfo" && isCell) { 
             props.cancel = true; 
         }
@@ -255,32 +248,16 @@ function Reservation() {
                 console.log(error)
             });
         }
-        /* matos.current.map(item => {
-            const find = props.data[0].materiel.find(elem => elem.id === item.id);
-            console.log(item)
-            if(find !== undefined){
-                console.log(find)
-                find.quantite +=1;
-            }else{
-                let data = {
-                    id: item.id, 
-                    label: item.label,
-                    quantite: item.quantite,
-                    tarifLoc: item.tarifLoc 
-                }
-
-                props.data[0].materiel.push(data);
-            }
-        }) */
 
        materielRef.current = [];
        matos.current = [];
     }
 
     const contentDialog = (props) => {
+        console.log(props)
         return (
             <div className="dialogContent" id="dialogContent1">
-                {props.materiel && <ListMaterieleReservationModify key={new Date().getTime()} id="TableID" materielRef={materielRef} allMaterieleRef={allMaterieleRef} materielReserve={props.materiel} materiel={materiel} allMateriele={allMateriele} setAllMateriele={setAllMateriele} />} 
+                {props.materiel && <ListMaterieleReservationModify key={new Date().getTime()} id="TableID" materielRef={materielRef} allReservations={approvedReservations} reservation={props} />} 
             </div>
         );
     }
@@ -291,7 +268,7 @@ function Reservation() {
         }
     }
     const editorTemplate = (props) =>{
-        console.log(props)
+        
         
         const buttons = [{
             buttonModel: {
@@ -300,6 +277,7 @@ function Reservation() {
                 isPrimary: true,
             },
             'click': () => {
+                console.log(props)
                 var materiels = []
 
                 props.materiel && props.materiel.map((item, index) => {
@@ -322,8 +300,6 @@ function Reservation() {
                     }else{
                         materiels.push(item);
                     }
-
-                    //calcQuantiteReserve(item, materielRef.current)
                 })
 
                 const table = document.getElementById("custom-event-editor");
@@ -435,13 +411,9 @@ function Reservation() {
                                 <input id="isApproved" name="isApproved" className="e-field e-control" type="checkbox"/>
                             </td>
                         </tr>
-                    </tbody>
-                    
+                    </tbody> 
                 </table>
-                <DialogComponent key={new Date().getTime()} allowDragging={true} buttons={buttons} modal={true} showCloseIcon={true} width='80%' height='auto' visible={false} ref={defaultDialog} closeOnEscape={true} content={() => contentDialog(props)}> 
-                    {/*  {props.materiel && <ListMaterieleReservation ref={tableRef} materielReserve={props.materiel} materiel={materiel} setMateriel={setMateriel} />} */}
-                    
-                </DialogComponent>
+                <DialogComponent key={new Date().getTime()} allowDragging={true} buttons={buttons} modal={true} showCloseIcon={true} width='80%' height='auto' visible={false} ref={defaultDialog} closeOnEscape={true} content={() => contentDialog(props)} /> 
             </div>
         );
     }
@@ -461,7 +433,7 @@ function Reservation() {
             <div>
                 <ButtonComponent id='add' title='Add' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
                 <ScheduleComponent width='100%' height='550px' currentView='TimelineMonth'
-                    selectedDate={new Date(2021, 10, 1)} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
+                    selectedDate={Date.now()} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
                     popupClose={popupClose} editorTemplate={editorTemplate} popupOpen={onPopupOpen} eventRendered={eventRender}
                 >
                     <ViewsDirective>

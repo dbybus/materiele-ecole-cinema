@@ -2,7 +2,7 @@ import React, {useState} from 'react'
 import {Form, Button, Row, Col, Container} from 'react-bootstrap'
 import DatePicker from 'react-datepicker'
 import MaterieleDataService from "../services/materiele.service";
-const common = require( "./common")
+const common = require( "../common")
 
 const AddMateriele = (props) => {
     const {setOpenPopup} = props;

@@ -17,7 +17,7 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
-import { calcQuantiteReserve, convertDateToFr } from "./common";
+import { calcQuantiteReserve, convertDateToFr } from "../common";
 import { ListGroup } from "react-bootstrap";
 import { FcApproval, FcDisclaimer } from "react-icons/fc";
 
