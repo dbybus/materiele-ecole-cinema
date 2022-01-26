@@ -20,9 +20,11 @@ import {Container} from 'react-bootstrap'
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import Loading from './loading';
 import { dateRangeOverlaps } from "../common";
+import { useAuth0 } from '@auth0/auth0-react';
 
 function ListMaterieleReservationModify(props) {
 
+  const { getAccessTokenSilently } = useAuth0();
   const { reservation, allReservations, materielRef} = props;
   const [allMateriels, setAllMateriels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,35 +80,35 @@ function ListMaterieleReservationModify(props) {
         })   
       })
 
-      const response = await MaterieleDataService.getAll();
-      let newArray = [...response.data];
+      getAccessTokenSilently().then(async token => {
+        const response = await MaterieleDataService.getAll(token);
+        let newArray = [...response.data];
 
-      newArray.map((element, index) => {  
-        //Add temporary attribute quantite disponible
-        newArray[index].quantiteDisp = element.Qtotale;
-        newArray[index].tempMateriel = 0;
-        newArray[index].prixTotal = 0;
+        newArray.map((element, index) => {  
+          //Add temporary attribute quantite disponible
+          newArray[index].quantiteDisp = element.Qtotale;
+          newArray[index].tempMateriel = 0;
+          newArray[index].prixTotal = 0;
 
-        //Verify if material is reserved and which quantity 
-        const materielTemp = reservedMaterialList.find(item => item.id === element.id);
-      
-        if (materielTemp != undefined) {
+          //Verify if material is reserved and which quantity 
+          const materielTemp = reservedMaterialList.find(item => item.id === element.id);
+        
+          if (materielTemp != undefined) {
 
-          newArray[index].quantiteDisp = element.Qtotale - materielTemp.quantite;
-          
-          const filterReserv = reservation.materiel.find(item => item.id === materielTemp.id);
+            newArray[index].quantiteDisp = element.Qtotale - materielTemp.quantite;
+            
+            const filterReserv = reservation.materiel.find(item => item.id === materielTemp.id);
 
-          if(filterReserv !== undefined){
-            newArray[index].tempMateriel = materielTemp.quantite;
+            if(filterReserv !== undefined){
+              newArray[index].tempMateriel = materielTemp.quantite;
+            }
           }
-        }
-      })
+        })
 
-      //console.log("MATOS RESERVE ", materielReserve)
-      //setAllMateriele(filterCategorie=== 'all' ? newArray : newArray.filter(item => item.categorie === filterCategorie))
-      setAllMateriels(filterCategorie === 'all' && filterLieu === 'all'? newArray : newArray.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') 
-      || (item.lieu === filterLieu &&  filterCategorie === 'all') 
-      || (item.categorie === filterCategorie && item.lieu === filterLieu)));
+        setAllMateriels(filterCategorie === 'all' && filterLieu === 'all'? newArray : newArray.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') 
+        || (item.lieu === filterLieu &&  filterCategorie === 'all') 
+        || (item.categorie === filterCategorie && item.lieu === filterLieu)));
+      })
   };
 
   useEffect(() =>{

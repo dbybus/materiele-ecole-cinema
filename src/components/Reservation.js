@@ -13,7 +13,8 @@ import {
   } from '@syncfusion/ej2-react-schedule';
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 import { L10n } from '@syncfusion/ej2-base';
-import { useAuth0 } from '@auth0/auth0-react'
+import { useAuth0 } from '@auth0/auth0-react';
+
 L10n.load({
     'en-US': {
         'schedule': {
@@ -30,26 +31,35 @@ import ListMaterieleReservationModify from "./ListMaterieleReservationModify";
 function Reservation() {
     const [approvedReservations, setApprovedReservervations] = useState([]);
     const [toggle, setToggle] = useState(false);
-    const { user } = useAuth0();
+    const { user,  getAccessTokenSilently} = useAuth0();
     const matos = useRef([]);
     const defaultDialog = useRef(null);
     const materielRef = useRef([]);
-
+    const [token, setToken] = useState();
     function toggleReservation() {
         setToggle(true);
     }
 
-    const getAllReservations = async () => {
-        const reserv = await ReservationDataService.getAll();
-
-        setApprovedReservervations(user['https://example-api/role'].find(element => element === 'Admin') !== undefined 
-                                || user['https://example-api/role'].find(element => element === 'Prof') !== undefined 
-                                ? reserv.data : reserv.data.filter(item => item.isApproved));
+    const getAllReservations = async () => {       
+        getAccessTokenSilently().then(token =>{
+            setToken(token);
+            ReservationDataService.getAll(token).then(response => {
+                setApprovedReservervations(user['https://example-api/role'].find(element => element === 'Admin') !== undefined 
+                || user['https://example-api/role'].find(element => element === 'Prof') !== undefined 
+                ? response.data : response.data.filter(item => item.isApproved));
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+        })
     };
 
     useEffect(() => {
         if(user){
+            console.log(user)
             getAllReservations();
+            console.log(localStorage.getItem("token"));
+            console.log(approvedReservations)
         }
     }, [user]);
 
@@ -233,7 +243,7 @@ function Reservation() {
                 materiel: matos.current
             }
 
-            ReservationDataService.update(props.data[0].Id, data).then(() =>
+            ReservationDataService.update(props.data[0].Id, data, token).then(() =>
             {
                 console.log("Reservation succesfully updated");                
             }).catch(error => {
@@ -241,7 +251,7 @@ function Reservation() {
             });
             window.location.reload();
         }else if(props.requestType === "eventRemoved"){
-            ReservationDataService.delete(props.data[0].Id).then(() =>
+            ReservationDataService.delete(props.data[0].Id, token).then(() =>
             {
                 console.log("Reservation succesfully deleted");
             }).catch(error => {

@@ -2,9 +2,11 @@ import React, {useState} from 'react'
 import {Form, Button, Row, Col, Container} from 'react-bootstrap'
 import DatePicker from 'react-datepicker'
 import MaterieleDataService from "../services/materiele.service";
+import { useAuth0 } from '@auth0/auth0-react';
 const common = require( "../common")
 
 const AddMateriele = (props) => {
+    const { getAccessTokenSilently } = useAuth0();
     const {setOpenPopup} = props;
     const [validated, setValidated] = useState(false);
     const [label, setLabel] = useState("");
@@ -29,15 +31,18 @@ const AddMateriele = (props) => {
             event.preventDefault();
             event.stopPropagation();
         }else{
-            addNew();
-            addImage();
+            getAccessTokenSilently().then(token => {
+                addNew(token);
+                addImage(token);
+            })
+            
             setOpenPopup(false);
         }
 
         setValidated(true);
     };
     
-    const addNew = () =>{
+    const addNew = (token) =>{
         
         let data = {
             label: label,
@@ -51,16 +56,16 @@ const AddMateriele = (props) => {
             dateAchat: dateAchat,
             url_pic: "/img/materiels/"+common.setImagePath(url_pic)
         };
-          
-        MaterieleDataService.create(data)
+        
+        MaterieleDataService.create(data, token)
             .then(() => {
-                console.log("Created new user successfully!");
-                
+                console.log("Created new materiel successfully!");
             })
             .catch((e) => {
                 console.log(e);
                 alert(e)
             });
+        
     }
 
     const onChangePicture = e => {
@@ -68,11 +73,11 @@ const AddMateriele = (props) => {
         setUrl_Pic(e.target.files[0].name);
     };
 
-    const addImage = async () =>{
+    const addImage = async (token) =>{
         if(image){
             const formData = new FormData();
             formData.append('file', image);
-            MaterieleDataService.uploadImgMat(formData);
+            MaterieleDataService.uploadImgMat(formData, token);
         } 
     }
        

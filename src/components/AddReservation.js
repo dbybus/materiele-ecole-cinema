@@ -13,7 +13,7 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 const AddReservation = (props) => {
 
     const {allReservations} = props;
-    const {user} = useAuth0();
+    const {user, getAccessTokenSilently} = useAuth0();
     const {sub, email} = user;
     const history = useHistory();
     const [step, setStep] = useState(0);
@@ -129,7 +129,8 @@ const AddReservation = (props) => {
             data.isApproved = true;
         }
 
-        ReservationDataService.create(data)
+        getAccessTokenSilently().then(token => {
+            ReservationDataService.create(data, token)
             .then(() => {
                 console.log("Created new reservation successfully!");
                 history.push("/Reservation")
@@ -139,6 +140,8 @@ const AddReservation = (props) => {
                 console.log(e);
                 alert(e)
             });
+        })
+        
     }
     return (
         <div>

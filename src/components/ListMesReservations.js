@@ -24,7 +24,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 
 function ListMesReservations() {
   const [myReservations, setMyReservations] = useState();
-  const { user } = useAuth0();
+  const { user, getAccessTokenSilently } = useAuth0();
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -48,14 +48,16 @@ function ListMesReservations() {
 
   const getAllReservations = async () => {
     if(user){
-      console.log(user)
-      ReservationDataService.getAll()
-      .then(response => {
-          setMyReservations(response.data.filter(item => item.beneficiaire === user.email));
+      getAccessTokenSilently().then(token => {
+        ReservationDataService.getAll(token)
+        .then(response => {
+            setMyReservations(response.data.filter(item => item.beneficiaire === user.email));
+        })
+        .catch((e) => {
+          console.log(e);
+        });
       })
-      .catch((e) => {
-        console.log(e);
-      });
+     
     }
   };
  

@@ -25,19 +25,17 @@ function NavBar(){
       setAdminRole(user['https://example-api/role'].find(element => element === 'Admin'));
       setProfRole(user['https://example-api/role'].find(element => element === 'Prof'));
       TokenService.setUser(user);
-  
+     
       getAccessTokenSilently().then(token =>{
           TokenService.setLocalAccessToken(token);
           
-          ReservationDataService.getAll()
-          .then(response => {
+          ReservationDataService.getAll(token).then(response => {
               setNonApproved(response.data.filter(item => !item.isApproved).length)
               setMyNonApproved(response.data.filter(item => !item.isApproved && user.email === item.beneficiaire).length);
           })
           .catch((e) => {
             console.log(e);
           });
-
       })
       //console.log(localStorage.getItem("nonApprovedReservations"))
     }

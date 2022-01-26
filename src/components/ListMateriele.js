@@ -29,7 +29,7 @@ function ListMateriele() {
   const [openPopup, setOpenPopup] = useState(false)
   const [filterCategorie, setFilterCategorie] = useState("all");
   const [filterLieu, setFilterLieu] = useState("all");
-  //const [token, setToken] = useState('')
+  const [token, setToken] = useState('');
   const {user, getAccessTokenSilently} = useAuth0()
   const { uid, name, picture, email } = user;
   console.log(user)
@@ -57,14 +57,18 @@ function ListMateriele() {
   };
 
   const getAllMateriele = async () => {
-    MaterieleDataService.getAll()
-    .then(response => {
-      console.log(response)
-      setAllMateriele(filterCategorie === 'all' && filterLieu === 'all'? response.data: response.data.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') || (item.lieu === filterLieu &&  filterCategorie === 'all') || (item.categorie === filterCategorie && item.lieu === filterLieu)));
+    getAccessTokenSilently().then(token => {
+      setToken(token);
+      MaterieleDataService.getAll(token)
+      .then(response => {
+        console.log(response)
+        setAllMateriele(filterCategorie === 'all' && filterLieu === 'all'? response.data: response.data.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') || (item.lieu === filterLieu &&  filterCategorie === 'all') || (item.categorie === filterCategorie && item.lieu === filterLieu)));
+      })
+      .catch((e) => {
+        console.log(e);
+      });
     })
-    .catch((e) => {
-      console.log(e);
-    });
+    
   };
 
   useEffect(() =>{
@@ -170,13 +174,13 @@ function ListMateriele() {
                 console.log(newData, oldData)
                 const dataUpdate = [...allMateriele];
                 const index = oldData.tableData.id;
-                MaterieleDataService.update(dataUpdate[index].id, newData).then(() => {
+                MaterieleDataService.update(dataUpdate[index].id, newData, token).then(() => {
                   
                   if(newData.image){
                     const formData = new FormData();
                     formData.append('file', newData.image);
                     
-                    MaterieleDataService.uploadImgMat(formData).then(()=>{
+                    MaterieleDataService.uploadImgMat(formData, token).then(()=>{
                       
                       console.log("New image was uploaded succesfully")
                       
@@ -185,7 +189,7 @@ function ListMateriele() {
                           url_pic: oldData.url_pic
                         }
         
-                        MaterieleDataService.deleteImgMat(data).then(() => console.log('Old image was removed '));
+                        MaterieleDataService.deleteImgMat(data, token).then(() => console.log('Old image was removed '));
                       }
                       
                     });
@@ -205,13 +209,13 @@ function ListMateriele() {
                 const index = oldData.tableData.id;
 
                 //Delete material from db
-                MaterieleDataService.delete(dataDelete[index].id);
+                MaterieleDataService.delete(dataDelete[index].id, token);
 
                 let data ={
                   url_pic: dataDelete[index].url_pic
                 }
 
-                MaterieleDataService.deleteImgMat(data);
+                MaterieleDataService.deleteImgMat(data, token);
 
                 dataDelete.splice(index, 1);
                 setAllMateriele([...dataDelete]);

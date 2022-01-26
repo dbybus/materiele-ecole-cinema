@@ -20,9 +20,12 @@ import {Container} from 'react-bootstrap'
 import { calcQuantiteReserve, convertDateToFr } from "../common";
 import { ListGroup } from "react-bootstrap";
 import { FcApproval, FcDisclaimer } from "react-icons/fc";
+import { useAuth0 } from '@auth0/auth0-react';
 
 function ListNotApprovedReservations() {
   const [noApprovedReservervations, setNoApprovedReservervations] = useState();
+  const {getAccessTokenSilently} = useAuth0();
+  const [token, setToken] = useState();
 
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -45,14 +48,18 @@ function ListNotApprovedReservations() {
   };
 
   const getAllReservations = async () => {
-    ReservationDataService.getAll()
-    .then(response => {
-        console.log(response.data)
-        setNoApprovedReservervations(response.data.filter(item => !item.isApproved));
+    getAccessTokenSilently().then(token => {
+      setToken(token);
+      ReservationDataService.getAll(token)
+      .then(response => {
+          console.log(response.data)
+          setNoApprovedReservervations(response.data.filter(item => !item.isApproved));
+      })
+      .catch((e) => {
+        console.log(e);
+      });
     })
-    .catch((e) => {
-      console.log(e);
-    });
+    
   };
  
   useEffect(() =>{
@@ -107,7 +114,7 @@ function ListNotApprovedReservations() {
               const dataDelete = [...noApprovedReservervations];
               const index = rowData.tableData.id;
               rowData.isApproved = true;
-              ReservationDataService.update(rowData.id, rowData);
+              ReservationDataService.update(rowData.id, rowData, token);
               dataDelete.splice(index, 1);
               setNoApprovedReservervations([...dataDelete]);
             }
@@ -118,7 +125,7 @@ function ListNotApprovedReservations() {
             onClick: () => {
               const dataDelete = [...noApprovedReservervations];
               const index = rowData.tableData.id;
-              ReservationDataService.delete(rowData.id);
+              ReservationDataService.delete(rowData.id, token);
               dataDelete.splice(index, 1);
               setNoApprovedReservervations([...dataDelete]);
             }

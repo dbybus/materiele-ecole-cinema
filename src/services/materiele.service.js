@@ -1,23 +1,28 @@
 import http from "../http-common";
-var axios = require("axios").default;
 
 class MaterieleDataService {
-  getAll() {
+  getAll(token) {
     return http.get("/materiele/findAll", {
       headers:{
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',
-
+        'Authorization': `Bearer ${token}`
       }
     })
   }
 
- get(id) {
-    return http.get(`/materiele/findOne/${id}`);
+ get(id, token) {
+    return http.get(`/materiele/findOne/${id}`, {
+      headers:{
+        'Authorization': `Bearer ${token}`
+      }
+    });
   }
 
-  async create(data) {
-    return http.post("/materiele/create", data)
+  async create(data, token) {
+    return http.post("/materiele/create", data, {
+      headers:{
+        'Authorization': `Bearer ${token}`
+      }
+    })
       .then(result => {
         // Handle result…
         console.log(result.data);
@@ -27,25 +32,38 @@ class MaterieleDataService {
       });
   }
 
-  update(id, data) {
-    return http.put(`/materiele/update/${id}`, data);
+  update(id, data, token) {
+    return http.put(`/materiele/update/${id}`, data, {
+      headers:{
+        'Authorization': `Bearer ${token}`
+      }
+    });
   }
 
-  delete(id) {
-    return http.delete(`/materiele/delete/${id}`);
+  delete(id, token) {
+    return http.delete(`/materiele/delete/${id}`, {
+      headers:{
+        'Authorization': `Bearer ${token}`
+      }
+    });
   }
 
-  deleteAll() {
-    return http.delete(`/materiele/deleteAll`);
+  deleteAll(token) {
+    return http.delete(`/materiele/deleteAll`, {
+      headers:{
+        'Authorization': `Bearer ${token}`
+      }
+    });
   }
 
-  async uploadImgMat(file) {
+  async uploadImgMat(file, token) {
     console.log(file);
     return http.post('/materiele/uploadImgMat', file, {
       headers:{
         'content-type': 'multipart/form-data',
         "Access-Control-Allow-Origin": "*",
         'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',
+        'Authorization': `Bearer ${token}`
       }
     }).then(result => {
         // Handle result…
@@ -56,16 +74,13 @@ class MaterieleDataService {
     });
   }
 
-  getFiles() {
-    return http.get("/materiele");
-  }
-
-  deleteImgMat(data) {
+  deleteImgMat(data, token) {
     return http.post('/materiele/deleteImgMat', data, {
       headers:{
         'Content-Type': 'application/json',
         "Access-Control-Allow-Origin": "*",
         'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',
+        'Authorization': `Bearer ${token}`
       }
     });
   }

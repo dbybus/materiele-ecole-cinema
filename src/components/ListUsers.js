@@ -103,7 +103,6 @@ function ListUsers() {
               setTimeout(() => {
                 const dataUpdate = [...allUsers];
                 const index = oldData.tableData.id;
-                MaterieleDataService.update(dataUpdate[index].id, newData);
 
                 dataUpdate[index] = newData;
                 setAllUsers([...dataUpdate]);
@@ -116,16 +115,6 @@ function ListUsers() {
               setTimeout(() => {
                 const dataDelete = [...allUsers];
                 const index = oldData.tableData.id;
-
-                //Delete material from db
-                MaterieleDataService.delete(dataDelete[index].id);
-
-                let data ={
-                  url_pic: dataDelete[index].url_pic
-                }
-
-                MaterieleDataService.deleteImgMat(data);
-
                 dataDelete.splice(index, 1);
                 setAllUsers([...dataDelete]);
 

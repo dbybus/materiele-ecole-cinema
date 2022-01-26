@@ -20,6 +20,7 @@ import {Container} from 'react-bootstrap'
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import Loading from './loading';
 import {Select, MenuItem} from '@material-ui/core'
+import { useAuth0 } from '@auth0/auth0-react';
 
 function ListMaterieleReservation(props) {
 
@@ -27,7 +28,7 @@ function ListMaterieleReservation(props) {
   const [loading, setLoading] = useState(true);
   const [filterCategorie, setFilterCategorie] = useState("all");
   const [filterLieu, setFilterLieu] = useState("all");
-
+  const {getAccessTokenSilently} = useAuth0()
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
     Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -51,7 +52,8 @@ function ListMaterieleReservation(props) {
   //console.log("Materiel encore reserve", materielReserve)
   const getAllMateriele = async () => {
     
-      const response = await MaterieleDataService.getAll();
+    getAccessTokenSilently().then(async (token) => {
+      const response = await MaterieleDataService.getAll(token);
       let newArray = [...response.data];
       
       newArray.map((element, index) => {  
@@ -67,9 +69,9 @@ function ListMaterieleReservation(props) {
           newArray[index].quantiteDisp = element.Qtotale - materielTemp.quantite;
         }
       })
-      //console.log("MATOS RESERVE ", materielReserve)
-      //setAllMateriele(filterCategorie=== 'all' ? newArray : newArray.filter(item => item.categorie === filterCategorie))
+
       setAllMateriele(filterCategorie === 'all' && filterLieu === 'all'? newArray : newArray.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') || (item.lieu === filterLieu &&  filterCategorie === 'all') || (item.categorie === filterCategorie && item.lieu === filterLieu)));
+    })
   };
 
   useEffect(() =>{
