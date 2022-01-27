@@ -12,7 +12,7 @@ import AddReservation from "./components/AddReservation";
 import ListMaterieleReservation from './components/ListMaterieleReservation';
 import ListNotApprovedReservations from './components/ListNotApprovedReservations';
 import ListMesReservations from './components/ListMesReservations';
-
+import Footer from "./components/Footer";
 function App() {
   const { isLoading } = useAuth0();
 
@@ -24,7 +24,7 @@ function App() {
     <div id="app" className="d-flex flex-column h-100">
       <NavBar />
       <Router>
-      <div className="container flex-grow-1">
+      <div className="container my-4">
         <Switch>
           <ProtectedRoute path="/" exact component={Reservation} />
           <ProtectedRoute path="/Reservation" exact component={Reservation} />
@@ -39,6 +39,7 @@ function App() {
         </Switch>
       </div>
       </Router>
+      <Footer />
     </div>
   );
 }
