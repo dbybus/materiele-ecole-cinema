@@ -21,6 +21,7 @@ import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox'
 import Loading from './loading';
 import { dateRangeOverlaps } from "../common";
 import { useAuth0 } from '@auth0/auth0-react';
+import ModalImage from "react-modal-image";
 
 function ListMaterieleReservationModify(props) {
 
@@ -125,11 +126,13 @@ function ListMaterieleReservationModify(props) {
         id="TableID"
         icons={tableIcons}
         options = {{
-          rowStyle: (index) => index%2 == 0 ? {background:"#f5f5f5"} : null 
+          rowStyle: (index) => index%2 == 0 ? {background:"#f5f5f5"} : null,
+          pageSize:20,
+          pageSizeOptions:[20,40, 60]  
         }}
         columns={[
           { title: 'Nom', field: 'label', editable: 'never' },
-          { title: 'Image', field: 'image', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />, editable: 'never'},
+          { title: 'Image', field: 'image', render: item => <ModalImage small={item.url_pic} large={item.url_pic} alt={item.label} />, editable: 'never'},
           { title: 'Category', field: 'categorie', editable: 'never'},
           { title: 'Disponible', field: 'quantiteDisp', type: 'numeric'},
           { title: 'Quantite', field: 'Qtotale', type: 'numeric'},

@@ -19,10 +19,11 @@ import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import AddMateriele from './AddMateriele';
 import ModalPopup from './ModalPopup';
-import {useAuth0} from "@auth0/auth0-react"
-import {Select, MenuItem} from '@material-ui/core'
-import {enumToDegree, setImagePath} from '../common'
-import {Button} from '@material-ui/core'
+import {useAuth0} from "@auth0/auth0-react";
+import {Select, MenuItem} from '@material-ui/core';
+import {enumToDegree, setImagePath} from '../common';
+import {Button} from '@material-ui/core';
+import ModalImage from "react-modal-image";
 
 function ListMateriele() {
   const [allMateriele, setAllMateriele] = useState([])
@@ -82,12 +83,13 @@ function ListMateriele() {
       <MaterialTable 
         icons={tableIcons}
         options = {{
-          rowStyle: (data, index) => index%2 == 0 ? {background:"#f5f5f5"} : null
+          rowStyle: (data, index) => index%2 == 0 ? {background:"#f5f5f5"} : null,
+          pageSize:20 
         }}
         columns={[
           { title: 'Nom', field: 'label' },
           { title: 'Reference', field: 'ref' },
-          { title: 'Image', field: 'image', render: item => <img src={item.url_pic} alt="" border="3" height="200" width="200" />,
+          { title: 'Image', field: 'image', render: item => <ModalImage small={item.url_pic} large={item.url_pic} alt={item.label} />,
             editComponent: (props) => {
               //console.log(props);
               return (
