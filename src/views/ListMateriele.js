@@ -18,7 +18,7 @@ import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import AddMateriele from './AddMateriele';
-import ModalPopup from './ModalPopup';
+import ModalPopup from '../components/ModalPopup';
 import {useAuth0} from "@auth0/auth0-react";
 import {Select, MenuItem} from '@material-ui/core';
 import {enumToDegree, setImagePath} from '../common';
@@ -84,7 +84,8 @@ function ListMateriele() {
         icons={tableIcons}
         options = {{
           rowStyle: (data, index) => index%2 == 0 ? {background:"#f5f5f5"} : null,
-          pageSize:20 
+          pageSize:20,
+          pageSizeOptions:[20,40, 60] 
         }}
         columns={[
           { title: 'Nom', field: 'label' },

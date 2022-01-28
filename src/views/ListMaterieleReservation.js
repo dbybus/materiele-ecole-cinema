@@ -18,7 +18,7 @@ import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
-import Loading from './loading';
+import Loading from '../components/loading';
 import {Select, MenuItem} from '@material-ui/core'
 import { useAuth0 } from '@auth0/auth0-react';
 import ModalImage from "react-modal-image";

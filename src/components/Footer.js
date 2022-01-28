@@ -7,7 +7,7 @@ export default function Footer() {
             <Container expand="lg" bg='light'>
                 <div><a href='/files/Reglement materiel GE+LA  2016_12.pdf' target='_blank' rel='noopener noreferrer'>Règlement du Matériel &gt;&gt;</a></div>
                 &copy; {new Date().getFullYear()} Copyright: <a href="https://www.educasuisse.ch"> Educasuisse </a>
-                <div>Author: Dmitri Baibus</div>
+                <div>Auteur: Dmitri Baibus</div>
             </Container>
         </div>
     )

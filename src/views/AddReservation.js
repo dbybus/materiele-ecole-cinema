@@ -1,13 +1,13 @@
 import React, {useState, useEffect} from 'react'
 import {Form, Row, Col, Container, ListGroup} from 'react-bootstrap'
 import ListMaterieleReservation from "./ListMaterieleReservation";
-import DatePickerReserv from "./DatePickerReserv";
+import DatePickerReserv from "../components/DatePickerReserv";
 import {useAuth0} from "@auth0/auth0-react"
 import ReservationDataService from "../services/reservation.service"
 import { useHistory } from 'react-router';
 import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'
 import { convertDateToFr, calcDays, calcTotalPrice, dateRangeOverlaps } from '../common';
-import GeneratePdf from "./GeneratePdf"
+import GeneratePdf from "../components/GeneratePdf"
 import { PDFDownloadLink } from '@react-pdf/renderer';
 
 const AddReservation = (props) => {

@@ -6,7 +6,7 @@ import { ListGroup } from "react-bootstrap";
 import { convertDateToFr, calcDays, calcTotalPrice } from "../common";
 import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import GeneratePdf from "./GeneratePdf";
+import GeneratePdf from "../components/GeneratePdf";
 import {
     ScheduleComponent, Agenda as Agenda, Month, TimelineMonth, Inject,
     ViewsDirective, ViewDirective

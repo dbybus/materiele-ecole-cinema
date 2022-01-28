@@ -1,18 +1,19 @@
 import { BrowserRouter as Router, Switch } from "react-router-dom";
-import ListMateriele from './components/ListMateriele';
-import AddMateriele from './components/AddMateriele';
-import Reservation from './components/Reservation';
+import ListMateriele from './views/ListMateriele';
+import AddMateriele from './views/AddMateriele';
+import Reservation from './views/Reservation';
 import Loading from './components/loading';
 import { useAuth0 } from '@auth0/auth0-react';
 import NavBar from './components/NavBar';
-import Profile from "./components/profile"
-import ListUsers from "./components/ListUsers"
+import Profile from "./views/Profile"
+import ListUsers from "./views/ListUsers"
 import ProtectedRoute from "./auth/protected-route";
-import AddReservation from "./components/AddReservation";
-import ListMaterieleReservation from './components/ListMaterieleReservation';
-import ListNotApprovedReservations from './components/ListNotApprovedReservations';
-import ListMesReservations from './components/ListMesReservations';
+import AddReservation from "./views/AddReservation";
+import ListMaterieleReservation from './views/ListMaterieleReservation';
+import ListNotApprovedReservations from './views/ListNotApprovedReservations';
+import ListMesReservations from './views/ListMesReservations';
 import Footer from "./components/Footer";
+
 function App() {
   const { isLoading } = useAuth0();
 

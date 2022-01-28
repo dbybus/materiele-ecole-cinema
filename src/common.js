@@ -21,7 +21,7 @@ module.exports.calcDays = function(startDate, endDate){
     var difference_in_time = endDate - startDate;
     var difference_in_days = (difference_in_time / (1000 * 3600 * 24)) + 1;
 
-    return difference_in_days;
+    return difference_in_days.toFixed();
 }
 
 module.exports.calcTotalPrice = function(materiel){
