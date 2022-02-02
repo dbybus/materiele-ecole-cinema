@@ -24,6 +24,7 @@ const AddReservation = (props) => {
     const [materiel, setMateriel] = useState([]);
     const [creatorId, setCreatorId] = useState("");
     const [creatorEmail, setCreatorEmail] = useState("");
+    const [beneficiaire, setBeneficiaire] = useState("");
     const [materielReserve, setMaterielReserve] = useState([]);
     const [totalSum, setTotatSum] = useState(0);
     const [totalSumWithDays, setTotalSumWithDays] = useState(0);
@@ -37,7 +38,7 @@ const AddReservation = (props) => {
     
     const nextStep = (event) =>{
 
-        if(reservationName === '' || lieu === '' || from === null || to === null){
+        if(reservationName === '' || lieu === '' || beneficiaire === '' || from === null || to === null){
             event.preventDefault();
             event.stopPropagation();
         }else{
@@ -82,7 +83,7 @@ const AddReservation = (props) => {
     const getReservedMaterials = () => {
         const findByDate = allReservations.filter(item => dateRangeOverlaps(from.setHours(14, 0, 0 ,0), to.setHours(13, 0, 0 ,0), new Date(item.date_start), new Date(item.date_end)));
         let reservedMaterialList = [];
-
+        
         Object.keys(findByDate).map((id) => {
             findByDate[id].getReservation.forEach((element, index) => {
                 const materiel = element.getMateriel;
@@ -119,7 +120,8 @@ const AddReservation = (props) => {
             date_start: from.setHours(14, 0, 0 ,0),
             date_end: to.setHours(13, 0, 0 ,0),
             createur: creatorId,
-            beneficiaire: creatorEmail,
+            creatorEmail: creatorEmail, 
+            beneficiaire: beneficiaire,
             materiel: materiel,
             isApproved: false
         };
@@ -185,6 +187,19 @@ const AddReservation = (props) => {
                         </Row>
                         <Row className="mb-3">
                             <Form.Group as={Col} md="11" controlId="validationCustom02">
+                                <Form.Label>Beneficiaire</Form.Label>
+                                <Form.Control
+                                    required
+                                    type="text"
+                                    value={beneficiaire}
+                                    onChange={(e) => setBeneficiaire(e.target.value)}
+                                    placeholder="Beneficiaire"
+                                />
+                                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+                            </Form.Group>
+                        </Row>
+                        <Row className="mb-3">
+                            <Form.Group as={Col} md="11" controlId="validationCustom02">
                                 <Form.Label>Lieu</Form.Label>
                                 <Form.Control
                                     required
@@ -215,8 +230,9 @@ const AddReservation = (props) => {
                         <h5>Informations :</h5>
                         <ListGroup variant="flush">
                             <ListGroup.Item>Titre: <b>{reservationName}</b></ListGroup.Item>
+                            <ListGroup.Item>Créateur de la réservation: <b>{creatorEmail}</b></ListGroup.Item>
                             <ListGroup.Item>Lieu: <b>{lieu}</b></ListGroup.Item>
-                            <ListGroup.Item>Bénéficiaire: <b>{creatorEmail}</b></ListGroup.Item>
+                            <ListGroup.Item>Bénéficiaire: <b>{beneficiaire}</b></ListGroup.Item>
                             <ListGroup.Item>{`DU : ${convertDateToFr(from)}, AU: ${convertDateToFr(to)}`}</ListGroup.Item>
                         </ListGroup>
                     </Row>
@@ -241,7 +257,7 @@ const AddReservation = (props) => {
                     <Row className="mb-3">
                         <PDFDownloadLink  document= {<GeneratePdf reservationName={reservationName} lieu={lieu} from={from} to={to} 
                             quantiteMateriel={materiel} totalSum={totalSum} daysReservation={daysReservation} totalSumWithDays={totalSumWithDays}
-                            creatorEmail={creatorEmail} />} 
+                            creatorEmail={creatorEmail} beneficiaire={beneficiaire}/>} 
                             fileName="fee_acceptance.pdf">
                             {({ blob, url, loading, error }) => (loading ? 'Chargement du document...' : 'Téléchargez votre devis')}
                         </PDFDownloadLink>

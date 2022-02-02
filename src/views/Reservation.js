@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, createRef, forwardRef, createElement } from "react";
 import ReservationDataService from "../services/reservation.service"
 import AddReservation from "./AddReservation";
-import { FaRegEnvelope, FaRegCalendarAlt, FaToolbox, FaRegFilePdf } from 'react-icons/fa'
+import { FaUserAlt, FaRegCalendarAlt, FaToolbox, FaRegFilePdf } from 'react-icons/fa'
 import { ListGroup } from "react-bootstrap";
 import { convertDateToFr, calcDays, calcTotalPrice } from "../common";
 import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
@@ -78,16 +78,19 @@ function Reservation() {
                 element.getMateriel.quantite = element.quantite;
                 materiels.push(element.getMateriel);
             })   
-            
+
             reservation.push({
                 Id: item.id,
                 Subject: item.titre,
                 StartTime: new Date(item.date_start),
                 EndTime : new Date(item.date_end),
                 IsAllDay: false,
+                ref: item.ref,
                 materiel: materiels,
                 beneficiaire: item.beneficiaire,
                 createur: item.createur,
+                createurEmail: item.createurEmail,
+                beneficiaire: item.beneficiaire,
                 lieu: item.lieu,
                 IsReadonly : isReadOnly,
                 isApproved: item.isApproved,
@@ -112,7 +115,7 @@ function Reservation() {
                     }
                     {
                         <div className="e-date-time">
-                            <div><FaRegEnvelope size={14}/></div>
+                            <div><FaUserAlt size={14}/></div>
                             <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
                                 {props.beneficiaire}
                             </div>                
@@ -138,9 +141,9 @@ function Reservation() {
                             <div><FaRegFilePdf size={14}/></div>
                             <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
                                 <p>Devis</p>
-                                <PDFDownloadLink  document= {<GeneratePdf reservationName={props.Subject} lieu={props.lieu} from={props.StartTime} to={props.EndTime} 
+                                <PDFDownloadLink  document= {<GeneratePdf reservationName={props.Subject} ref={props.ref} beneficiaire={props.beneficiaire} lieu={props.lieu} from={props.StartTime} to={props.EndTime} 
                                     quantiteMateriel={props.materiel} totalSum={calcTotalPrice(props.materiel)} daysReservation={calcDays(props.StartTime, props.EndTime)} totalSumWithDays={calcTotalPrice(props.materiel)*calcDays(props.StartTime, props.EndTime)}
-                                    creatorEmail={props.beneficiaire} />} 
+                                    creatorEmail={props.createurEmail} />} 
                                     fileName="fee_acceptance.pdf">
                                     {({ blob, url, loading, error }) => (loading ? 'Chargement du devis...' : 'Téléchargez votre devis')}
                                 </PDFDownloadLink>
@@ -156,10 +159,18 @@ function Reservation() {
 
     const onPopupOpen = (props) =>{
         console.log("POPUP open ", props)
-        let isCell = props.target.classList.contains('e-work-cells') || props.target.classList.contains('e-header-cells');
         
-        if (props.type === "QuickInfo" && isCell) { 
-            props.cancel = true; 
+        if(props.type === 'DeleteAllert' && props.data.Id !== undefined){
+            ReservationDataService.delete(props.data.Id, token).then(console.log(`Reservation with Id: ${props.data.Id} was deleted successfully`))
+            .catch(error => console.log(error));
+        }
+
+        if (props.type === "QuickInfo") {
+            let isCell = props.target.classList.contains('e-work-cells') || props.target.classList.contains('e-header-cells'); 
+            
+            if(isCell){
+                props.cancel = true; 
+            }
         }
         
         if (props.data.Id === undefined && props.type == 'Editor') //to prevent the editor on cells 

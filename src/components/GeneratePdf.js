@@ -9,7 +9,9 @@ import {
     StyleSheet,
     Image,
   } from '@react-pdf/renderer';
+
 import { convertDateToFr } from '../common';
+import ItemsTable from './PDF/ItemsTable';
 
 const List = ({ children }) => children;
 
@@ -82,7 +84,7 @@ src: 'https://fonts.gstatic.com/s/oswald/v13/Y_TKV6o8WovbUd3m_X9aAA.ttf',
 }); 
 
 function GeneratePdf(props) {
-    const { quantiteMateriel, reservationName, lieu, creatorEmail, from, to, totalSum, daysReservation, totalSumWithDays } = props; 
+    const { quantiteMateriel, reservationName, beneficiaire, lieu, creatorEmail, from, to, totalSum, daysReservation, totalSumWithDays } = props; 
 
     return (
         <Document>
@@ -91,14 +93,14 @@ function GeneratePdf(props) {
                     <View style={styles.image}>
                         <Image
                             style={{
-                            width:'auto'}}
+                            width:'250px'}}
                             src="/img/logocinema.jpg"
                         />
                     </View>
                     <View style={styles.image}>
                         <Image
                             style={{
-                            width:'auto'}}
+                            width:'250px'}}
                             src="/img/logojournalisme.png"
                         />
                     </View>
@@ -121,7 +123,7 @@ function GeneratePdf(props) {
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.text}>
-                        <b>Bénéficiaire:</b> {creatorEmail}
+                        <b>Bénéficiaire:</b> {beneficiaire}
                         </Text>
                     </View>
                     <View style={styles.row}>
@@ -134,13 +136,7 @@ function GeneratePdf(props) {
                         Matériel:
                         </Text>
                     </View>
-                    <List>
-                        {quantiteMateriel.map((item, i) => (
-                        <Item key={i} style={styles.row}>
-                            {`${item.quantite} x ${item.label} = ${item.tarifLoc} -.CHF`}
-                        </Item>
-                        ))}
-                    </List>
+                    <ItemsTable data={quantiteMateriel} />
                     <View>
                         <Text style={styles.label}>
                         Totaux:
@@ -186,6 +182,7 @@ function GeneratePdf(props) {
                         Les personnes en charge du matériel lors de l'emprunt sont tenu responsable pour le bon état de l'équipement
                         </Text>
                     </View>
+                    
                 </View>
             </Page>
         </Document>

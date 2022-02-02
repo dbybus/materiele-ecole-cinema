@@ -15,6 +15,9 @@ module.exports = (sequelize, Sequelize) => {
         createur: {
             type: Sequelize.STRING
         },
+        createurEmail: {
+            type: Sequelize.STRING
+        },
         beneficiaire: {
             type: Sequelize.STRING
         },

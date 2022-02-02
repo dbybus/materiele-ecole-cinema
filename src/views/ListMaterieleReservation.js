@@ -163,6 +163,7 @@ function ListMaterieleReservation(props) {
               }else{
                 setMateriel(oldArray => [...oldArray, {
                   id: rowData.id,
+                  ref: rowData.ref,
                   quantite: 1,
                   label: rowData.label,
                   tarifLoc: rowData.tarifLoc
