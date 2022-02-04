@@ -10,10 +10,9 @@ import {
     Image,
   } from '@react-pdf/renderer';
 
-import { convertDateToFr } from '../common';
 import ItemsTable from './PDF/ItemsTable';
 
-const List = ({ children }) => children;
+const common = require('../common');
 
 export const Item = ({ children }) => (
   <View style={styles.item}>
@@ -93,14 +92,14 @@ function GeneratePdf(props) {
                     <View style={styles.image}>
                         <Image
                             style={{
-                            width:'250px'}}
+                            width:'160px'}}
                             src="/img/logocinema.jpg"
                         />
                     </View>
                     <View style={styles.image}>
                         <Image
                             style={{
-                            width:'250px'}}
+                            width:'160px'}}
                             src="/img/logojournalisme.png"
                         />
                     </View>
@@ -128,7 +127,7 @@ function GeneratePdf(props) {
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.text}>
-                        du {convertDateToFr(from)} au {convertDateToFr(to)}, à {lieu}
+                        du {common.convertDateToFr(from)} au {common.convertDateToFr(to)}, à {lieu}
                         </Text>
                     </View>
                     <View>
@@ -182,7 +181,6 @@ function GeneratePdf(props) {
                         Les personnes en charge du matériel lors de l'emprunt sont tenu responsable pour le bon état de l'équipement
                         </Text>
                     </View>
-                    
                 </View>
             </Page>
         </Document>

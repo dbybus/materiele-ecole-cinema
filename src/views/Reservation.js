@@ -1,19 +1,20 @@
-import React, { useEffect, useState, useRef, createRef, forwardRef, createElement } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import ReservationDataService from "../services/reservation.service"
 import AddReservation from "./AddReservation";
 import { FaUserAlt, FaRegCalendarAlt, FaToolbox, FaRegFilePdf } from 'react-icons/fa'
 import { ListGroup } from "react-bootstrap";
-import { convertDateToFr, calcDays, calcTotalPrice } from "../common";
 import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import GeneratePdf from "../components/GeneratePdf";
 import {
     ScheduleComponent, Agenda as Agenda, Month, TimelineMonth, Inject,
     ViewsDirective, ViewDirective
-  } from '@syncfusion/ej2-react-schedule';
+} from '@syncfusion/ej2-react-schedule';
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 import { L10n } from '@syncfusion/ej2-base';
 import { useAuth0 } from '@auth0/auth0-react';
+import { DialogComponent } from '@syncfusion/ej2-react-popups';
+import ListMaterieleReservationModify from "./ListMaterieleReservationModify";
 
 L10n.load({
     'en-US': {
@@ -25,8 +26,8 @@ L10n.load({
         },
     }
 });
-import { DialogComponent } from '@syncfusion/ej2-react-popups';
-import ListMaterieleReservationModify from "./ListMaterieleReservationModify";
+
+const common = require('../common');
 
 function Reservation() {
     const [approvedReservations, setApprovedReservervations] = useState([]);
@@ -36,6 +37,7 @@ function Reservation() {
     const defaultDialog = useRef(null);
     const materielRef = useRef([]);
     const [token, setToken] = useState();
+    
     function toggleReservation() {
         setToggle(true);
     }
@@ -56,10 +58,7 @@ function Reservation() {
 
     useEffect(() => {
         if(user){
-            console.log(user)
             getAllReservations();
-            console.log(localStorage.getItem("token"));
-            console.log(approvedReservations)
         }
     }, [user]);
 
@@ -109,7 +108,7 @@ function Reservation() {
                         <div className="e-date-time">
                             <div><FaRegCalendarAlt size={14}/></div>
                             <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                du {convertDateToFr(props.StartTime)} au {convertDateToFr(props.EndTime)} ({calcDays(props.StartTime, props.EndTime)} jours)
+                                du {common.convertDateToFr(props.StartTime)} au {common.convertDateToFr(props.EndTime)} ({common.calcDays(props.StartTime, props.EndTime)} jours)
                             </div>                
                         </div>
                     }
@@ -142,7 +141,7 @@ function Reservation() {
                             <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
                                 <p>Devis</p>
                                 <PDFDownloadLink  document= {<GeneratePdf reservationName={props.Subject} ref={props.ref} beneficiaire={props.beneficiaire} lieu={props.lieu} from={props.StartTime} to={props.EndTime} 
-                                    quantiteMateriel={props.materiel} totalSum={calcTotalPrice(props.materiel)} daysReservation={calcDays(props.StartTime, props.EndTime)} totalSumWithDays={calcTotalPrice(props.materiel)*calcDays(props.StartTime, props.EndTime)}
+                                    quantiteMateriel={props.materiel} totalSum={common.calcTotalPrice(props.materiel)} daysReservation={common.calcDays(props.StartTime, props.EndTime)} totalSumWithDays={common.calcTotalPrice(props.materiel)*common.calcDays(props.StartTime, props.EndTime)}
                                     creatorEmail={props.createurEmail} />} 
                                     fileName="fee_acceptance.pdf">
                                     {({ blob, url, loading, error }) => (loading ? 'Chargement du devis...' : 'Téléchargez votre devis')}

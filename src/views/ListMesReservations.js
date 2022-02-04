@@ -17,13 +17,14 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
-import { calcQuantiteReserve, convertDateToFr } from "../common";
 import { ListGroup } from "react-bootstrap";
 import { FcApproval, FcDisclaimer } from "react-icons/fc";
-import { useAuth0 } from '@auth0/auth0-react'
+import { useAuth0 } from '@auth0/auth0-react';
+
+const common = require('../common');
 
 function ListMesReservations() {
-  const [myReservations, setMyReservations] = useState();
+  const [myReservations, setMyReservations] = useState([]);
   const { user, getAccessTokenSilently } = useAuth0();
 
   const tableIcons = {
@@ -56,24 +57,19 @@ function ListMesReservations() {
         .catch((e) => {
           console.log(e);
         });
-      })
-     
+      })  
     }
   };
  
   useEffect(() =>{
     getAllReservations();
+
+    console.log(myReservations)
   },[])
 
-  const ProductList = (rowData) => {
-    var materiels = []
-    
-    rowData.getReservation.map(item => {
-      calcQuantiteReserve(item.getMateriel, materiels)
-    })
-
-    const renderedMateriels = materiels.map(item => {
-      return <ListGroup.Item key={item.id}>{item.quantite} x {item.label}</ListGroup.Item>
+  const productList = (rowData) => {
+    const renderedMateriels = rowData.getReservation.map(item => {
+      return <ListGroup.Item key={item.id}>{item.quantite} x {item.getMateriel.label}</ListGroup.Item>
     })
 
     return <ListGroup variant="flush">{renderedMateriels}</ListGroup>
@@ -95,12 +91,12 @@ function ListMesReservations() {
           { title: 'Bénéficiaire', field: 'beneficiaire', editable: 'never'},
           { title: 'Date debut', field: 'date_start', render: rowData => (
             <div>
-              {convertDateToFr(rowData.date_start)}
+              {common.convertDateToFr(rowData.date_start)}
             </div>
           ),},
           { title: 'Date fin', field: 'date_end', render: rowData => (
             <div>
-              {convertDateToFr(rowData.date_end)}
+              {common.convertDateToFr(rowData.date_end)}
             </div>
           ),},
           { title: 'État de la réservation', field: 'isApproved', editable: 'never', defaultSort: 'asc', render: rowData => (
@@ -112,13 +108,11 @@ function ListMesReservations() {
         data={myReservations}
         title="Mes réservations"
         detailPanel={ rowData => {
-            return <div>{ProductList(rowData)}</div>
+            return <div>{productList(rowData)}</div>
           } 
         }
       />
     </Container>
-   
-    
   )
 }
 

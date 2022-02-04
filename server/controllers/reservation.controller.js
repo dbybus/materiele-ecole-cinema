@@ -45,7 +45,7 @@ exports.create = async (req, res) => {
       date_start: req.body.date_start,
       date_end: req.body.date_end,
       createur: req.body.createur,
-      createurEmail: req.body.createurEmail,
+      createurEmail: req.body.creatorEmail,
       beneficiaire: req.body.beneficiaire,
       isApproved: req.body.isApproved
     };
@@ -124,7 +124,7 @@ exports.update = (req, res) => {
         date_start: req.body.date_start,
         date_end: req.body.date_end,
         createur: req.body.createur,
-        createurEmail: req.body.createurEmail,
+        createurEmail: req.body.creatorEmail,
         beneficiaire: req.body.beneficiaire,
         isApproved: req.body.isApproved
       };

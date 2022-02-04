@@ -21,9 +21,10 @@ import AddMateriele from './AddMateriele';
 import ModalPopup from '../components/ModalPopup';
 import {useAuth0} from "@auth0/auth0-react";
 import {Select, MenuItem} from '@material-ui/core';
-import {enumToDegree, setImagePath} from '../common';
 import {Button} from '@material-ui/core';
 import ModalImage from "react-modal-image";
+
+const common = require('../common');
 
 function ListMateriele() {
   const [allMateriele, setAllMateriele] = useState([])
@@ -33,8 +34,8 @@ function ListMateriele() {
   const [token, setToken] = useState('');
   const {user, getAccessTokenSilently} = useAuth0()
   const { uid, name, picture, email } = user;
-  console.log(user)
   const roleAdmin = user['https://example-api/role'].find(element => element === 'Admin');
+  
   console.log("Here ",roleAdmin, name)
 
   const tableIcons = {
@@ -101,7 +102,7 @@ function ListMateriele() {
                   id="raised-button-file"
                   onChange={(e) => {
                   // console.log(e.target.files[0])
-                    props.rowData.url_pic = "/img/materiels/"+ setImagePath(e.target.files[0].name);
+                    props.rowData.url_pic = "/img/materiels/"+ common.setImagePath(e.target.files[0].name);
                     props.onChange(e.target.files[0])
                   }}
                 />
@@ -120,7 +121,7 @@ function ListMateriele() {
           { title: 'Tarif', field: 'tarifLoc'},
           { title: 'Valeur', field: 'valRemp'},
           { title: 'Lieu', field: 'lieu'},
-          { title: 'Degré', field: 'degre', render: rowData => enumToDegree(rowData.degre)},
+          { title: 'Degré', field: 'degre', render: rowData => common.enumToDegree(rowData.degre)},
         ]}
         data={allMateriele}
         

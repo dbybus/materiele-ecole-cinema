@@ -17,10 +17,11 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
-import { calcQuantiteReserve, convertDateToFr } from "../common";
 import { ListGroup } from "react-bootstrap";
 import { FcApproval, FcDisclaimer } from "react-icons/fc";
 import { useAuth0 } from '@auth0/auth0-react';
+
+const common = require('../common');
 
 function ListNotApprovedReservations() {
   const [noApprovedReservervations, setNoApprovedReservervations] = useState();
@@ -70,7 +71,7 @@ function ListNotApprovedReservations() {
     var materiels = []
     
     rowData.getReservation.map(item => {
-      calcQuantiteReserve(item.getMateriel, materiels)
+      common.calcQuantiteReserve(item.getMateriel, materiels)
     })
 
     const renderedMateriels = materiels.map(item => {
@@ -95,12 +96,12 @@ function ListNotApprovedReservations() {
           { title: 'Bénéficiaire', field: 'beneficiaire', editable: 'never'},
           { title: 'Date debut', field: 'date_start', render: rowData => (
             <div>
-              {convertDateToFr(rowData.date_start)}
+              {common.convertDateToFr(rowData.date_start)}
             </div>
           ),},
           { title: 'Date fin', field: 'date_end', render: rowData => (
             <div>
-              {convertDateToFr(rowData.date_end)}
+              {common.convertDateToFr(rowData.date_end)}
             </div>
           ),},
         ]}

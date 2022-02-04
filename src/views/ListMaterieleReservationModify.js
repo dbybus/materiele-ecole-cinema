@@ -19,9 +19,10 @@ import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import Loading from '../components/loading';
-import { dateRangeOverlaps } from "../common";
 import { useAuth0 } from '@auth0/auth0-react';
 import ModalImage from "react-modal-image";
+
+const common = require('../common');
 
 function ListMaterieleReservationModify(props) {
 
@@ -54,7 +55,7 @@ function ListMaterieleReservationModify(props) {
   
   const getAllMateriele = async () => {
     
-      const findByDate = allReservations.filter(item => dateRangeOverlaps(reservation.StartTime, reservation.EndTime, new Date(item.date_start), new Date(item.date_end)));
+      const findByDate = allReservations.filter(item => common.dateRangeOverlaps(reservation.StartTime, reservation.EndTime, new Date(item.date_start), new Date(item.date_end)));
       console.log(reservation);
       var reservedMaterialList = [];
 
@@ -66,7 +67,7 @@ function ListMaterieleReservationModify(props) {
               temp.quantite += mat.quantite;
               if(findByDate[(index-1).toString()] !== undefined){
                   //If current date doesnt overlap next reservation 
-                  if(!dateRangeOverlaps(findByDate[index-1].date_start, findByDate[index-1].date_end, findByDate[index].date_start, findByDate[index].date_end)){
+                  if(!common.dateRangeOverlaps(findByDate[index-1].date_start, findByDate[index-1].date_end, findByDate[index].date_start, findByDate[index].date_end)){
                       temp.quantite -= mat.quantite;
                   }  
               }

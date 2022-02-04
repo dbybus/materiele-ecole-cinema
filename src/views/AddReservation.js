@@ -6,9 +6,10 @@ import {useAuth0} from "@auth0/auth0-react"
 import ReservationDataService from "../services/reservation.service"
 import { useHistory } from 'react-router';
 import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'
-import { convertDateToFr, calcDays, calcTotalPrice, dateRangeOverlaps } from '../common';
 import GeneratePdf from "../components/GeneratePdf"
 import { PDFDownloadLink } from '@react-pdf/renderer';
+
+const common = require('../common');
 
 const AddReservation = (props) => {
 
@@ -38,7 +39,7 @@ const AddReservation = (props) => {
     
     const nextStep = (event) =>{
 
-        if(reservationName === '' || lieu === '' || beneficiaire === '' || from === null || to === null){
+        if(reservationName === '' || lieu === '' || !emailValidation() || from === null || to === null){
             event.preventDefault();
             event.stopPropagation();
         }else{
@@ -51,7 +52,15 @@ const AddReservation = (props) => {
     const previousStep = () => {
         setStep(step - 1);
     }
-    
+
+    const emailValidation = () => {
+        const regex = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+        if(!beneficiaire || regex.test(beneficiaire) === false){
+            return false;
+        }
+        return true;
+    }
+
     useEffect(() => {
         //console.log("Step 1 data ", reservationName, lieu, from, to, materiel, creatorId, creatorEmail)
         if(step === -1){
@@ -62,8 +71,8 @@ const AddReservation = (props) => {
         }else if(step === 1){
             getReservedMaterials();
         }else if(step === 2){
-            var difference_in_days = calcDays(from, to);
-            var total = calcTotalPrice(materiel);  
+            var difference_in_days = common.calcDays(from, to);
+            var total = common.calcTotalPrice(materiel);  
             setTotatSum(total);
             setTotalSumWithDays( total * difference_in_days);
             setDaysReservation(difference_in_days);
@@ -81,7 +90,7 @@ const AddReservation = (props) => {
     }, [user]); 
     
     const getReservedMaterials = () => {
-        const findByDate = allReservations.filter(item => dateRangeOverlaps(from.setHours(14, 0, 0 ,0), to.setHours(13, 0, 0 ,0), new Date(item.date_start), new Date(item.date_end)));
+        const findByDate = allReservations.filter(item => common.dateRangeOverlaps(from.setHours(14, 0, 0 ,0), to.setHours(13, 0, 0 ,0), new Date(item.date_start), new Date(item.date_end)));
         let reservedMaterialList = [];
         
         Object.keys(findByDate).map((id) => {
@@ -95,7 +104,7 @@ const AddReservation = (props) => {
 
                     if(findByDate[(+id-1).toString()] !== undefined){
                         //If current date doesnt overlap next reservation 
-                        if(!dateRangeOverlaps(findByDate[(+id-1).toString()].date_start, findByDate[(+id-1).toString()].date_end, findByDate[id].date_start, findByDate[id].date_end)){
+                        if(!common.dateRangeOverlaps(findByDate[(+id-1).toString()].date_start, findByDate[(+id-1).toString()].date_end, findByDate[id].date_start, findByDate[id].date_end)){
                             temp.quantite -= element.quantite;
                         }  
                     }
@@ -114,6 +123,7 @@ const AddReservation = (props) => {
 
     const submitStep = () => {
 
+        console.log(creatorEmail)
         let data = {
             titre: reservationName,
             lieu: lieu,
@@ -174,7 +184,7 @@ const AddReservation = (props) => {
                     <Form noValidate validated={validated}>
                         <Row className="mb-3">
                             <Form.Group as={Col} md="11" controlId="validationCustom01">
-                                <Form.Label>Nom</Form.Label>
+                                <Form.Label>Évènement</Form.Label>
                                 <Form.Control
                                     required
                                     type="text"
@@ -190,10 +200,10 @@ const AddReservation = (props) => {
                                 <Form.Label>Beneficiaire</Form.Label>
                                 <Form.Control
                                     required
-                                    type="text"
+                                    type="email"
                                     value={beneficiaire}
                                     onChange={(e) => setBeneficiaire(e.target.value)}
-                                    placeholder="Beneficiaire"
+                                    placeholder="Beneficiaire email @"
                                 />
                                 <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
                             </Form.Group>
@@ -233,7 +243,7 @@ const AddReservation = (props) => {
                             <ListGroup.Item>Créateur de la réservation: <b>{creatorEmail}</b></ListGroup.Item>
                             <ListGroup.Item>Lieu: <b>{lieu}</b></ListGroup.Item>
                             <ListGroup.Item>Bénéficiaire: <b>{beneficiaire}</b></ListGroup.Item>
-                            <ListGroup.Item>{`DU : ${convertDateToFr(from)}, AU: ${convertDateToFr(to)}`}</ListGroup.Item>
+                            <ListGroup.Item>{`DU : ${common.convertDateToFr(from)}, AU: ${common.convertDateToFr(to)}`}</ListGroup.Item>
                         </ListGroup>
                     </Row>
                     <Row className="mb-3">
