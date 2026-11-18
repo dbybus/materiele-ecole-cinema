@@ -161,17 +161,13 @@ body,
 
 /* ---------- Reservation calendar (Syncfusion) ---------- */
 
-.add-reservation-btn {
-  margin-bottom: 12px;
-}
-
 /* Timeline month: the theme forces 70px per day (≈ 2200px for a month), so it always scrolls.
    With a smaller minimum, Syncfusion stretches the days to fill the width: the whole month
    fits from ~1200px wide, and narrower screens still scroll. (#app raises specificity above
    the Syncfusion stylesheet, which is imported after this file.) */
 #app .e-schedule .e-timeline-month-view .e-date-header-wrap table col,
 #app .e-schedule .e-timeline-month-view .e-content-wrap table col {
-  width: 36px;
+  width: 30px; /* 31 days × 30px fits next to the "Mes réservations" panel at 1366px */
 }
 
 /* Syncfusion sizes each day as ceil(tableWidth / days), which can overflow by up to 1px per day
@@ -430,6 +426,201 @@ body,
 
 .materiel-table tbody tr:hover {
   background: #f8f9fc;
+}
+
+/* ---------- Landing page: "Mes réservations" panel + calendar ---------- */
+
+.landing {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.landing-calendar {
+  min-width: 0; /* lets the calendar shrink inside the grid */
+}
+
+.my-panel {
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  padding: 14px;
+  position: sticky;
+  top: 12px;
+}
+
+.my-panel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.my-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.my-panel-title .MuiSvgIcon-root {
+  color: #3f51b5;
+}
+
+.my-panel-count {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.my-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.my-panel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid #eceff1;
+  border-left: 4px solid #ef6c00;
+  border-radius: 6px;
+  background: #fff;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.my-panel-item--ok {
+  border-left-color: #2e7d32;
+}
+
+.my-panel-item:hover,
+.my-panel-item:focus-visible {
+  background: #f4f5fd;
+  box-shadow: 0 1px 4px rgba(63, 81, 181, 0.15);
+  outline: none;
+}
+
+.my-panel-item-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.my-panel-item-dates {
+  font-size: 0.82rem;
+  color: #495057;
+}
+
+.my-panel-item-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #6c757d;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef6c00;
+}
+
+.status-dot--ok {
+  background: #2e7d32;
+}
+
+.my-panel-empty {
+  font-size: 0.88rem;
+  color: #6c757d;
+  padding: 6px 0 4px;
+}
+
+.my-panel-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+/* Legend in the page header */
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: -1px;
+  background: #2e7d32;
+}
+
+.legend-dot--pending {
+  background: #ef6c00;
+}
+
+.legend-mine {
+  display: inline-block;
+  width: 12px;
+  height: 10px;
+  margin-right: 4px;
+  vertical-align: -1px;
+  border-radius: 2px;
+  background: #9e9e9e;
+  box-shadow: inset 4px 0 0 #1a237e;
+}
+
+/* Calendar: own reservations get a dark accent on the left; the one chosen in the panel pulses */
+#app .e-schedule .e-appointment.event-mine {
+  box-shadow: inset 4px 0 0 #1a237e;
+}
+
+#app .e-schedule .e-appointment.event-highlight {
+  animation: event-pulse 1.4s ease-out 2;
+  z-index: 2;
+}
+
+@keyframes event-pulse {
+  0% { box-shadow: inset 4px 0 0 #1a237e, 0 0 0 0 rgba(63, 81, 181, 0.7); }
+  70% { box-shadow: inset 4px 0 0 #1a237e, 0 0 0 10px rgba(63, 81, 181, 0); }
+  100% { box-shadow: inset 4px 0 0 #1a237e, 0 0 0 0 rgba(63, 81, 181, 0); }
+}
+
+/* Below 1200px: the panel becomes a horizontal row of cards above the calendar */
+@media (max-width: 1199.98px) {
+  .landing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .my-panel {
+    position: static;
+    padding: 10px 12px;
+  }
+
+  .my-panel-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .my-panel-list li {
+    flex: 0 0 240px;
+  }
+
+  .my-panel-link {
+    margin-top: 6px;
+  }
 }
 
 /* ---------- Calendar quick-info popup ---------- */
@@ -1049,9 +1240,6 @@ body,
     max-height: 56px !important;
   }
 
-  .add-reservation-btn {
-    width: 100%;
-  }
 
   /* Syncfusion event editor: stack label above field */
   .custom-event-editor,

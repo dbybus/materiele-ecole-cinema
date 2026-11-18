@@ -3,20 +3,21 @@ import { useLocation } from 'react-router-dom';
 import {
     ScheduleComponent, Agenda, Month, TimelineMonth, Inject, ViewsDirective, ViewDirective
 } from '@syncfusion/ej2-react-schedule';
-import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 import { L10n } from '@syncfusion/ej2-base';
-import { Snackbar } from '@material-ui/core';
+import { Button, Snackbar } from '@material-ui/core';
+import AddIcon from '@material-ui/icons/Add';
 import { Alert } from 'react-bootstrap';
 import ReservationDataService from '../services/reservation.service';
 import AddReservation from './AddReservation';
 import ReservationQuickInfo from '../components/reservation/ReservationQuickInfo';
 import ReservationEditor from '../components/reservation/ReservationEditor';
+import MyReservationsPanel from '../components/reservation/MyReservationsPanel';
 import {
-    STATUS_COLORS, notifyReservationsChanged, toSchedulerEvent, toUpdatePayload,
+    STATUS_COLORS, isMine, notifyReservationsChanged, toSchedulerEvent, toUpdatePayload,
 } from '../components/reservation/reservationUtils';
 import { useAuth0 } from '../auth';
 import { canManageReservations } from '../auth/roles';
-import useIsMobile from '../hooks/useIsMobile';
+import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
 
 L10n.load({
     'en-US': {
@@ -37,12 +38,15 @@ function Reservation() {
     const location = useLocation();
     const canManage = canManageReservations(user);
 
-    const [reservations, setReservations] = useState([]);
+    const isCompact = useIsCompact();
+    const [allReservations, setAllReservations] = useState([]);
     const [showAddForm, setShowAddForm] = useState(false);
     // Fixed at mount: a new Date on every render would jump the calendar back to today after each refresh
     const [initialDate] = useState(() => new Date());
     // Full material list chosen in the editor's "Modifier la liste" dialog (null = not changed)
     const changedMaterielsRef = useRef(null);
+    const scheduleRef = useRef(null);
+    const highlightRef = useRef(null); // id of the event to pulse after a jump from the panel
 
     // ---------- Data ----------
 
@@ -50,12 +54,25 @@ function Reservation() {
         try {
             const token = await getAccessTokenSilently();
             const { data } = await ReservationDataService.getAll(token);
-            // Students only see approved reservations; admins and teachers see everything
-            setReservations(canManage ? data : data.filter((r) => r.isApproved));
+            setAllReservations(data);
         } catch (error) {
             console.error('Could not load reservations', error);
         }
-    }, [getAccessTokenSilently, canManage]);
+    }, [getAccessTokenSilently]);
+
+    // The user's own reservations, whatever their status (for the panel and the calendar marker)
+    const myReservations = useMemo(
+        () => (user ? allReservations.filter((r) => isMine(r, user)) : []),
+        [allReservations, user]
+    );
+    const myIds = useMemo(() => new Set(myReservations.map((r) => r.id)), [myReservations]);
+
+    // Admins and teachers see everything. Students see approved reservations AND their own requests
+    // (before, a student's pending request vanished from the calendar as soon as it was created).
+    const reservations = useMemo(
+        () => (canManage ? allReservations : allReservations.filter((r) => r.isApproved || myIds.has(r.id))),
+        [allReservations, canManage, myIds]
+    );
 
     // Load on arrival, and again on every navigation: AddReservation navigates to /Reservation when it's
     // done or cancelled. That's this same page, so it doesn't remount; close the form and refresh instead.
@@ -134,6 +151,24 @@ function Reservation() {
 
     const onEventRendered = (args) => {
         args.element.style.backgroundColor = args.data.isApproved ? STATUS_COLORS.approved : STATUS_COLORS.pending;
+        // Own reservations get a marker; the one picked in the panel pulses once
+        if (myIds.has(args.data.Id)) args.element.classList.add('event-mine');
+        if (highlightRef.current === args.data.Id) args.element.classList.add('event-highlight');
+    };
+
+    // Panel -> calendar: show the reservation's dates and make the event pulse
+    const showInCalendar = (reservation) => {
+        const schedule = scheduleRef.current;
+        if (!schedule) return;
+        highlightRef.current = reservation.id;
+        schedule.selectedDate = new Date(reservation.date_start);
+        schedule.dataBind();
+        schedule.refreshEvents();
+        setTimeout(() => {
+            const el = document.querySelector(`.e-appointment[data-id="Appointment_${reservation.id}"]`);
+            if (el) el.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+            highlightRef.current = null; // the next refresh renders it normally again
+        }, 300);
     };
 
     // Stable objects so the scheduler doesn't re-process its options on every render
@@ -156,35 +191,58 @@ function Reservation() {
         return <AddReservation allReservations={reservations} />;
     }
 
+    // Fill the window under the header (and under the panel row on narrower screens), never too small
+    const calendarHeight = isMobile
+        ? 'max(420px, calc(100vh - 330px))'
+        : isCompact ? 'max(440px, calc(100vh - 360px))' : 'max(480px, calc(100vh - 215px))';
+
     return (
         <div>
-            <ButtonComponent cssClass="e-primary add-reservation-btn" onClick={() => setShowAddForm(true)}>
-                Ajouter une Réservation
-            </ButtonComponent>
+            <header className="page-header">
+                <div>
+                    <h1 className="page-title">Réservations</h1>
+                    {!isMobile && (
+                        <p className="page-subtitle">
+                            <span className="legend-dot legend-dot--ok" /> Validée
+                            <span className="legend-dot legend-dot--pending ms-3" /> En attente
+                            <span className="legend-mine ms-3" /> Mes réservations
+                        </p>
+                    )}
+                </div>
+                <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setShowAddForm(true)}>
+                    {isMobile ? 'Réserver' : 'Nouvelle réservation'}
+                </Button>
+            </header>
 
-            {/* key forces a clean re-mount when switching between phone and desktop layouts */}
-            <ScheduleComponent
-                key={isMobile ? 'mobile' : 'desktop'}
-                width="100%"
-                // Fill the window below the navbar and button, but never shrink below a usable size
-                height={isMobile ? 'calc(100vh - 200px)' : 'max(480px, calc(100vh - 190px))'}
-                currentView={isMobile ? 'Agenda' : 'TimelineMonth'}
-                enableAdaptiveUI={isMobile}
-                selectedDate={initialDate}
-                eventSettings={eventSettings}
-                quickInfoTemplates={quickInfoTemplates}
-                editorTemplate={editorTemplate}
-                popupOpen={onPopupOpen}
-                actionComplete={onActionComplete}
-                eventRendered={onEventRendered}
-            >
-                <ViewsDirective>
-                    <ViewDirective option="Month" />
-                    <ViewDirective option="TimelineMonth" />
-                    <ViewDirective option="Agenda" />
-                </ViewsDirective>
-                <Inject services={VIEWS} />
-            </ScheduleComponent>
+            <div className="landing">
+                <MyReservationsPanel reservations={myReservations} onSelect={showInCalendar} onNew={() => setShowAddForm(true)} />
+
+                <div className="landing-calendar">
+                    {/* key forces a clean re-mount when switching between phone and desktop layouts */}
+                    <ScheduleComponent
+                        ref={scheduleRef}
+                        key={isMobile ? 'mobile' : 'desktop'}
+                        width="100%"
+                        height={calendarHeight}
+                        currentView={isMobile ? 'Agenda' : 'TimelineMonth'}
+                        enableAdaptiveUI={isMobile}
+                        selectedDate={initialDate}
+                        eventSettings={eventSettings}
+                        quickInfoTemplates={quickInfoTemplates}
+                        editorTemplate={editorTemplate}
+                        popupOpen={onPopupOpen}
+                        actionComplete={onActionComplete}
+                        eventRendered={onEventRendered}
+                    >
+                        <ViewsDirective>
+                            <ViewDirective option="Month" />
+                            <ViewDirective option="TimelineMonth" />
+                            <ViewDirective option="Agenda" />
+                        </ViewsDirective>
+                        <Inject services={VIEWS} />
+                    </ScheduleComponent>
+                </div>
+            </div>
 
             <Snackbar open={!!flash} autoHideDuration={5000} onClose={() => setFlash(null)}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
