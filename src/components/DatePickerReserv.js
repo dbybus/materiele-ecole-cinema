@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import Helmet from 'react-helmet';
 import DayPicker, { DateUtils } from 'react-day-picker';
 import 'react-day-picker/lib/style.css';
+import useIsMobile from '../hooks/useIsMobile';
 
 export default function DatePickerReserv(props) {
   const {from, setStartDate, to, setEndDate} = props;
+  const isMobile = useIsMobile();
   /* const [from, setStartDate] = useState(null);
   const [to, setEndDate] = useState(null);
  */
@@ -54,7 +56,7 @@ export default function DatePickerReserv(props) {
       </p>
       <DayPicker
         className="Selectable"
-        numberOfMonths={2}
+        numberOfMonths={isMobile ? 1 : 2}
         selectedDays={[from, { from, to }]}
         modifiers={modifiers}
         onDayClick={handleDayClick}

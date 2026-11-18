@@ -15,6 +15,7 @@ import { L10n } from '@syncfusion/ej2-base';
 import { useAuth0 } from '../auth';
 import { DialogComponent } from '@syncfusion/ej2-react-popups';
 import ListMaterieleReservationModify from "./ListMaterieleReservationModify";
+import useIsMobile from "../hooks/useIsMobile";
 
 L10n.load({
     'en-US': {
@@ -37,7 +38,8 @@ function Reservation() {
     const defaultDialog = useRef(null);
     const materielRef = useRef([]);
     const [token, setToken] = useState();
-    
+    const isMobile = useIsMobile();
+
     function toggleReservation() {
         setToggle(true);
     }
@@ -433,7 +435,7 @@ function Reservation() {
                         </tr>
                     </tbody> 
                 </table>
-                <DialogComponent key={new Date().getTime()} allowDragging={true} buttons={buttons} modal={true} showCloseIcon={true} width='80%' height='auto' visible={false} ref={defaultDialog} closeOnEscape={true} content={() => contentDialog(props)} /> 
+                <DialogComponent key={new Date().getTime()} allowDragging={true} buttons={buttons} modal={true} showCloseIcon={true} width={isMobile ? '95%' : '80%'} height='auto' visible={false} ref={defaultDialog} closeOnEscape={true} content={() => contentDialog(props)} /> 
             </div>
         );
     }
@@ -450,20 +452,25 @@ function Reservation() {
         <div>
             {toggle && <AddReservation allReservations={approvedReservations} />}
             {!toggle && 
-            <div>
-                <ButtonComponent id='add' title='Add' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
-                <ScheduleComponent width='100%' height='550px' currentView='TimelineMonth'
-                    selectedDate={Date.now()} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
-                    popupClose={popupClose} editorTemplate={editorTemplate} popupOpen={onPopupOpen} eventRendered={eventRender}
-                >
-                    <ViewsDirective>
-                        <ViewDirective option='Month' />
-                        <ViewDirective option='TimelineMonth' />
-                        <ViewDirective option='Agenda' />
-                    </ViewsDirective>
-                    <Inject services={[Agenda, TimelineMonth,  Month]} />
-                </ScheduleComponent>
-            </div>
+                <div>
+                    <ButtonComponent id='add' title='Add' cssClass='e-primary add-reservation-btn' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
+                    {/* key forces a clean re-mount when switching between phone and desktop layouts */}
+                    <ScheduleComponent key={isMobile ? 'mobile' : 'desktop'} width='100%'
+                        // Fill the window below the navbar and button, but never shrink below a usable size
+                        height={isMobile ? 'calc(100vh - 200px)' : 'max(480px, calc(100vh - 190px))'}
+                        currentView={isMobile ? 'Agenda' : 'TimelineMonth'}
+                        enableAdaptiveUI={isMobile}
+                        selectedDate={Date.now()} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
+                        popupClose={popupClose} editorTemplate={editorTemplate} popupOpen={onPopupOpen} eventRendered={eventRender}
+                    >
+                        <ViewsDirective>
+                            <ViewDirective option='Month' />
+                            <ViewDirective option='TimelineMonth' />
+                            <ViewDirective option='Agenda' />
+                        </ViewsDirective>
+                        <Inject services={[Agenda, TimelineMonth,  Month]} />
+                    </ScheduleComponent>
+                </div>
             
             }
         </div>

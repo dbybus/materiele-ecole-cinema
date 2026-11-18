@@ -17,6 +17,7 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
+import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
 import { ListGroup } from "react-bootstrap";
 import { FcApproval, FcDisclaimer } from "react-icons/fc";
 import { useAuth0 } from '../auth';
@@ -24,7 +25,13 @@ import { useAuth0 } from '../auth';
 const common = require('../common');
 
 function ListNotApprovedReservations() {
-  const [noApprovedReservervations, setNoApprovedReservervations] = useState();
+  const isMobile = useIsMobile();
+  const isCompact = useIsCompact();
+  const [noApprovedReservervations, setNoApprovedReservervations] = useState([]);
+
+  // Long date on wide screens, short one ("24 nov. 2026") below 1200px; never wraps
+  const formatDate = (date) => isCompact ? common.convertDateToFrShort(date) : common.convertDateToFr(date);
+  const dateStyle = { whiteSpace: 'nowrap' };
   const {getAccessTokenSilently} = useAuth0();
   const [token, setToken] = useState();
 
@@ -67,43 +74,35 @@ function ListNotApprovedReservations() {
     getAllReservations();
   },[])
 
+  // Uses the reserved quantity of each line (the previous version counted every line as 1)
   const ProductList = (rowData) => {
-    var materiels = []
-    
-    rowData.getReservation.map(item => {
-      common.calcQuantiteReserve(item.getMateriel, materiels)
+    const renderedMateriels = rowData.getReservation.map(item => {
+      return <ListGroup.Item key={item.id}>{item.quantite} x {item.getMateriel.label}</ListGroup.Item>
     })
 
-    const renderedMateriels = materiels.map(item => {
-      return <ListGroup.Item key={item.id}>{item.quantite} x {item.label}</ListGroup.Item>
-    })
-
-    return <ListGroup variant="flush">{renderedMateriels}</ListGroup>
+    return <ListGroup variant="flush" className="detail-panel">{renderedMateriels}</ListGroup>
   }
 
   return (
     
-    <Container>
+    <Container className="table-view">
       <MaterialTable 
         icons={tableIcons}
         options = {{
-          rowStyle: (index) => index%2 == 0 ? {background:"#f5f5f5"} : null 
+          padding: isMobile ? 'dense' : 'default',
+          // material-table passes (rowData, index): the old version used rowData as the index, so rows were never striped
+          rowStyle: (rowData, index) => index % 2 === 0 ? {background:"#f5f5f5"} : null,
+          pageSize: 10,
+          pageSizeOptions: [10, 20, 50]
         }}
-        
+
         columns={[
-          { title: 'Titre', field: 'titre', editable: 'never' },
-          { title: 'Lieu', field: 'lieu', editable: 'never'},
-          { title: 'Bénéficiaire', field: 'beneficiaire', editable: 'never'},
-          { title: 'Date debut', field: 'date_start', render: rowData => (
-            <div>
-              {common.convertDateToFr(rowData.date_start)}
-            </div>
-          ),},
-          { title: 'Date fin', field: 'date_end', render: rowData => (
-            <div>
-              {common.convertDateToFr(rowData.date_end)}
-            </div>
-          ),},
+          { title: 'Titre', field: 'titre', editable: 'never', cellStyle: { minWidth: 160 } },
+          { title: 'Lieu', field: 'lieu', hidden: isCompact, editable: 'never'},
+          // Long email addresses wrap instead of stretching the whole table
+          { title: 'Bénéficiaire', field: 'beneficiaire', editable: 'never', cellStyle: { wordBreak: 'break-word', minWidth: 140 } },
+          { title: 'Date début', field: 'date_start', cellStyle: dateStyle, render: rowData => formatDate(rowData.date_start) },
+          { title: 'Date fin', field: 'date_end', cellStyle: dateStyle, render: rowData => formatDate(rowData.date_end) },
         ]}
         data={noApprovedReservervations}
         title="Valider des reservation"
@@ -133,7 +132,7 @@ function ListNotApprovedReservations() {
           })
         ]}
         detailPanel={ rowData => {
-            return <div>{ProductList(rowData)},{}</div>
+            return ProductList(rowData)
           } 
         }
       />

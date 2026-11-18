@@ -25,7 +25,7 @@ function App() {
     <div id="app" className="d-flex flex-column h-100">
       <NavBar />
       <Router>
-      <div className="container my-4">
+      <div className="container-fluid page-container my-3 my-md-4 flex-grow-1">
         <Switch>
           <ProtectedRoute path="/" exact component={Reservation} />
           <ProtectedRoute path="/Reservation" exact component={Reservation} />

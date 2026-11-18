@@ -17,6 +17,8 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
+import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
+import useFitPageSize from '../hooks/useFitPageSize';
 import AddMateriele from './AddMateriele';
 import ModalPopup from '../components/ModalPopup';
 import {useAuth0} from '../auth';
@@ -26,7 +28,12 @@ import ModalImage from "react-modal-image";
 
 const common = require('../common');
 
+// Same currency display as the reservation tables: "50 CHF"
+const chfSetting = { locale: 'fr-CH', currencyCode: 'CHF', minimumFractionDigits: 0, maximumFractionDigits: 2 };
+
 function ListMateriele() {
+  const isMobile = useIsMobile();
+  const isCompact = useIsCompact();
   const [allMateriele, setAllMateriele] = useState([])
   const [openPopup, setOpenPopup] = useState(false)
   const [filterCategorie, setFilterCategorie] = useState("all");
@@ -79,19 +86,29 @@ function ListMateriele() {
     }
   },[openPopup, filterCategorie, filterLieu])
 
+  // Rows per page = as many as fit in the window, so the table + pagination never scroll the page
+  const { containerRef, tableRef, pageSize, pageSizeOptions, onChangeRowsPerPage } =
+    useFitPageSize({ data: allMateriele, fallbackRowHeight: isMobile ? 64 : 72 });
+
   return (
-    <Container>
-      <MaterialTable 
+    <Container className="table-view" ref={containerRef}>
+      <MaterialTable
+        tableRef={tableRef}
         icons={tableIcons}
+        onChangeRowsPerPage={onChangeRowsPerPage}
         options = {{
+          padding: 'dense',
           rowStyle: (data, index) => index%2 == 0 ? {background:"#f5f5f5"} : null,
-          pageSize:20,
-          pageSizeOptions:[20,40, 60] 
+          pageSize: pageSize,
+          pageSizeOptions: pageSizeOptions,
+          // Don't pad the last page with blank rows (they made the table as tall as a full page)
+          emptyRowsWhenPaging: false
         }}
         columns={[
-          { title: 'Nom', field: 'label' },
-          { title: 'Reference', field: 'ref' },
-          { title: 'Image', field: 'image', render: item => <ModalImage small={item.url_pic} large={item.url_pic} alt={item.label} />,
+          // Only "Nom" has no fixed width, so material-table gives it all the remaining space
+          { title: 'Nom', field: 'label', cellStyle: { minWidth: isCompact ? 160 : 220 }, headerStyle: { minWidth: isCompact ? 160 : 220 } },
+          { title: 'Reference', field: 'ref', hidden: isMobile, width: 130 },
+          { title: 'Image', field: 'image', width: 100, render: item => <ModalImage className="mat-thumb mat-thumb--sm" small={item.url_pic} large={item.url_pic} alt={item.label} />,
             editComponent: (props) => {
               //console.log(props);
               return (
@@ -116,12 +133,12 @@ function ListMateriele() {
               );
             },
           },
-          { title: 'Quantite', field: 'Qtotale'},
-          { title: 'Category', field: 'categorie'},
-          { title: 'Tarif', field: 'tarifLoc'},
-          { title: 'Valeur', field: 'valRemp'},
-          { title: 'Lieu', field: 'lieu'},
-          { title: 'Degré', field: 'degre', render: rowData => common.enumToDegree(rowData.degre)},
+          { title: 'Quantite', field: 'Qtotale', type: 'numeric', width: 100 },
+          { title: 'Category', field: 'categorie', hidden: isMobile, width: 130 },
+          { title: 'Tarif', field: 'tarifLoc', hidden: isMobile, width: 110, type: 'currency', currencySetting: chfSetting },
+          { title: 'Valeur', field: 'valRemp', hidden: isCompact, width: 120, type: 'currency', currencySetting: chfSetting },
+          { title: 'Lieu', field: 'lieu', width: 110 },
+          { title: 'Degré', field: 'degre', hidden: isCompact, width: 130, cellStyle: { whiteSpace: 'nowrap' }, render: rowData => common.enumToDegree(rowData.degre)},
         ]}
         data={allMateriele}
         

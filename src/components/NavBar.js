@@ -25,10 +25,10 @@ function NavBar(){
       setAdminRole(user['https://example-api/role'].find(element => element === 'Admin'));
       setProfRole(user['https://example-api/role'].find(element => element === 'Prof'));
       TokenService.setUser(user);
-     
+
       getAccessTokenSilently().then(token =>{
           TokenService.setLocalAccessToken(token);
-          
+
           ReservationDataService.getAll(token).then(response => {
               setNonApproved(response.data.filter(item => !item.isApproved).length)
               setMyNonApproved(response.data.filter(item => !item.isApproved && user.email === item.beneficiaire).length);
@@ -38,29 +38,36 @@ function NavBar(){
           });
       })
     }
-    
+
   }, [user]);
 
+  const canValidate = adminRole !== undefined || profRole !== undefined;
+
   return (
-    <Navbar collapseOnSelect expand="lg" bg='light'>
-      <Container>
-        <Navbar.Brand href="#home">
-        <img className="logo"
-            src="/img/logocinema.jpg"
-            width='250px'
-            float= 'right'
-            alt="Ecole-Cinema logo" />
+    <Navbar collapseOnSelect expand="lg" bg='light' className="py-2">
+      <Container fluid className="page-width">
+        <Navbar.Brand href="/Reservation" className="me-2">
+          <img className="logo" src="/img/logocinema.jpg" alt="Ecole-Cinema logo" />
         </Navbar.Brand>
-        <Navbar.Toggle aria-controls="responsive-navbar-nav" />
-        <Navbar.Collapse id="responsive-navbar-nav" style={{paddingLeft: 100}}>
-            <Nav className="mr-auto">
+
+        {/* Profile stays visible next to the burger on mobile, moves to the far right on desktop */}
+        <div className="d-flex align-items-center ms-auto order-lg-last">
+          <ProfileMenu name={name} picture={picture}/>
+        </div>
+
+        <Navbar.Toggle aria-controls="responsive-navbar-nav" className="ms-2" />
+
+        <Navbar.Collapse id="responsive-navbar-nav">
+            <Nav className="me-auto ms-lg-4">
                 <Nav.Link href="/Reservation">Réservation</Nav.Link>
                 <Nav.Link href="/ListMateriele">Matériel</Nav.Link>
-                <Nav.Link href="/ListNotApprovedReservations" style={{visibility: adminRole !== undefined || profRole !== undefined ? 'visible' : 'hidden'}}>Réservation à valider
-                  <Badge color="secondary" badgeContent={nonApproved} style={{paddingLeft: 5}}>
-                    <FaBell />{" "}
-                  </Badge>
-                </Nav.Link>
+                {canValidate && (
+                  <Nav.Link href="/ListNotApprovedReservations">Réservation à valider
+                    <Badge color="secondary" badgeContent={nonApproved} style={{paddingLeft: 5}}>
+                      <FaBell />{" "}
+                    </Badge>
+                  </Nav.Link>
+                )}
                 <Nav.Link href="/ListMesReservations" >Mes Réservation
                   <Badge color="secondary" badgeContent={myNonApproved} style={{paddingLeft: 5}}>
                     <FaBell />{" "}
@@ -68,10 +75,9 @@ function NavBar(){
                 </Nav.Link>
             </Nav>
         </Navbar.Collapse>
-        <ProfileMenu name={name} picture={picture}/>
       </Container>
     </Navbar>
-      
+
   );
 };
 

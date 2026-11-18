@@ -11,3 +11,367 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* ---------- Layout ---------- */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+#app {
+  min-height: 100%;
+}
+
+/* Fluid page width: grows with the window, capped so lines don't get too long on big monitors.
+   The navbar uses the same width so the logo lines up with the content. */
+.page-container,
+.page-width {
+  max-width: 1600px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 992px) {
+  .page-container,
+  .page-width {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+/* Views wrap themselves in a <Container> inside the page container:
+   no double side padding, and no Bootstrap max-width capping them below the page width */
+.page-container .container {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ---------- Navbar ---------- */
+
+.navbar .logo {
+  width: 250px;
+  max-width: 55vw;
+  height: auto;
+}
+
+.profile-toggle {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #212529 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+}
+
+.profile-toggle:focus {
+  box-shadow: none !important;
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ---------- Tables (material-table) ---------- */
+
+.table-view .MuiPaper-root {
+  overflow: hidden;
+}
+
+/* Let the table scroll sideways instead of overflowing the page */
+.table-view table {
+  min-width: 100%;
+}
+
+/* Reservation status badge (replaces full-row green/orange backgrounds, which hurt readability) */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-chip--ok {
+  color: #1b5e20;
+  background: #e8f5e9;
+}
+
+.status-chip--pending {
+  color: #8a4b00;
+  background: #fff3e0;
+}
+
+/* Material list shown when a reservation row is expanded
+   (.table-view prefix: Bootstrap's .list-group padding reset is loaded after this file) */
+.table-view .detail-panel {
+  padding: 8px 16px 12px 72px;
+  background: #fafafa;
+  font-size: 0.9rem;
+}
+
+.table-view .detail-panel .list-group-item {
+  background: transparent;
+  padding: 4px 0;
+}
+
+@media (max-width: 767.98px) {
+  .table-view .detail-panel {
+    padding-left: 40px;
+  }
+}
+
+/* Thumbnails: keep rows compact on every screen size
+   (!important: react-modal-image sets max-width/max-height: 100% inline on the <img>) */
+.mat-thumb {
+  max-width: 72px !important;
+  max-height: 72px !important;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Smaller variant for tables that fit rows to the screen height (click still opens the full image) */
+.mat-thumb.mat-thumb--sm {
+  /* Fixed box (not just a max): the row has its final height before the image loads,
+     so rows-per-page can be measured right away */
+  width: 48px;
+  height: 48px;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  object-fit: cover;
+}
+
+/* ---------- Reservation calendar (Syncfusion) ---------- */
+
+.add-reservation-btn {
+  margin-bottom: 12px;
+}
+
+/* Timeline month: the theme forces 70px per day (≈ 2200px for a month), so it always scrolls.
+   With a smaller minimum, Syncfusion stretches the days to fill the width: the whole month
+   fits from ~1200px wide, and narrower screens still scroll. (#app raises specificity above
+   the Syncfusion stylesheet, which is imported after this file.) */
+#app .e-schedule .e-timeline-month-view .e-date-header-wrap table col,
+#app .e-schedule .e-timeline-month-view .e-content-wrap table col {
+  width: 36px;
+}
+
+/* Syncfusion sizes each day as ceil(tableWidth / days), which can overflow by up to 1px per day
+   and cut off the last day behind a scrollbar. Measuring from a table 30px narrower guarantees
+   the rounded total always fits (when the month is too wide anyway, the tables still grow and scroll). */
+#app .e-schedule .e-timeline-month-view .e-date-header-wrap > table,
+#app .e-schedule .e-timeline-month-view .e-content-wrap > table.e-content-table {
+  width: calc(100% - 30px);
+}
+
+/* ---------- Equipment picker cards (mobile reservation table) ---------- */
+
+.picker-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  padding: 8px 0 10px;
+}
+
+.picker-filters {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.picker-filters > * {
+  flex: 1;
+}
+
+.picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.picker-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.picker-card.is-selected {
+  border-color: #3f51b5;
+  background: #f4f5fd;
+}
+
+.picker-thumb {
+  flex: 0 0 56px;
+}
+
+.picker-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.picker-img--empty {
+  background: #eee;
+}
+
+.picker-body {
+  flex: 1;
+  min-width: 0; /* allows long names to wrap instead of pushing the stepper off-screen */
+}
+
+.picker-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.picker-meta {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.picker-stepper {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  border: 1px solid #d0d0d0;
+  border-radius: 20px;
+}
+
+.picker-qty {
+  min-width: 22px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Running total stays visible at the bottom while scrolling the list */
+.picker-summary {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  margin: 0 -4px;
+  background: #3f51b5;
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Generic helpers ---------- */
+
+.profile-json {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+}
+
+/* ---------- Phones / small tablets ---------- */
+
+@media (max-width: 767.98px) {
+  .page-container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  /* Keep logo + avatar + burger on a single line */
+  .navbar .logo {
+    max-width: 44vw;
+  }
+
+  .navbar .navbar-toggler {
+    padding: 4px 8px;
+  }
+
+  .navbar .navbar-collapse .nav-link {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  /* material-table toolbar: title, search and filters wrap onto several lines */
+  .table-view .MuiToolbar-root {
+    flex-wrap: wrap;
+    padding-left: 8px;
+    padding-right: 8px;
+    row-gap: 4px;
+  }
+
+  .table-view .MuiToolbar-root h6 {
+    font-size: 1.05rem;
+    white-space: normal;
+  }
+
+  .table-view .MuiTableCell-root {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+
+  .table-view .MuiTablePagination-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .mat-thumb {
+    max-width: 56px !important;
+    max-height: 56px !important;
+  }
+
+  .add-reservation-btn {
+    width: 100%;
+  }
+
+  /* Syncfusion event editor: stack label above field */
+  .custom-event-editor,
+  .custom-event-editor tbody,
+  .custom-event-editor tr,
+  .custom-event-editor td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .custom-event-editor td.e-textlabel {
+    padding-top: 8px;
+    font-weight: 500;
+  }
+
+  /* Day picker: one month, full width */
+  .RangeExample .DayPicker {
+    width: 100%;
+  }
+
+  .RangeExample .DayPicker-Month {
+    margin: 0.5em 0;
+    width: 100%;
+  }
+
+  .footer-copyright {
+    font-size: 0.85rem;
+  }
+}

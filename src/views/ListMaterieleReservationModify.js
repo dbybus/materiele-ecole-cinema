@@ -17,14 +17,18 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
+import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import Loading from '../components/loading';
 import { useAuth0 } from '../auth';
 import ModalImage from "react-modal-image";
+import MaterielPickerCards from '../components/MaterielPickerCards';
 
 const common = require('../common');
 
 function ListMaterieleReservationModify(props) {
+  const isMobile = useIsMobile();
+  const isCompact = useIsCompact();
 
   const { getAccessTokenSilently } = useAuth0();
   const { reservation, allReservations, materielRef} = props;
@@ -120,9 +124,75 @@ function ListMaterieleReservationModify(props) {
 
   },[loading])
 
+  // Add one unit (used by the table and the mobile cards). Changes are collected in materielRef.
+  const addOne = (row) => {
+    const dataUpdate = [...allMateriels];
+    const index = dataUpdate.findIndex(item => item.id === row.id);
+    if (index === -1 || dataUpdate[index].quantiteDisp === 0) return;
+
+    dataUpdate[index].quantiteDisp -= 1;
+    dataUpdate[index].tempMateriel += 1;
+    dataUpdate[index].prixTotal += dataUpdate[index].tarifLoc;
+    setAllMateriels(dataUpdate);
+
+    const matos = materielRef.current.find(element => element.id === row.id);
+    if (matos !== undefined) {
+      matos.quantite += 1;
+    } else {
+      materielRef.current.push({
+        id: row.id,
+        label: row.label,
+        quantite: 1,
+        tarifLoc: row.tarifLoc
+      });
+    }
+  };
+
+  // Remove one unit. A negative quantite in materielRef means "remove from the existing reservation".
+  const removeOne = (row) => {
+    const dataUpdate = [...allMateriels];
+    const index = dataUpdate.findIndex(item => item.id === row.id);
+    if (index === -1 || dataUpdate[index].tempMateriel === 0) return;
+
+    dataUpdate[index].quantiteDisp += 1;
+    dataUpdate[index].tempMateriel -= 1;
+    dataUpdate[index].prixTotal -= dataUpdate[index].tarifLoc;
+    setAllMateriels(dataUpdate);
+
+    const temp = materielRef.current.find(item => item.id === row.id);
+    if (temp !== undefined) {
+      temp.quantite -= 1;
+      if (temp.quantite === 0) {
+        materielRef.current = materielRef.current.filter(item => item.id !== row.id);
+      }
+    } else {
+      materielRef.current.push({
+        id: row.id,
+        label: row.label,
+        quantite: -1,
+        tarifLoc: row.tarifLoc
+      });
+    }
+  };
+
+  if (loading) {
+    return <Container className="d-flex justify-content-center align-items-center"><Loading /></Container>;
+  }
+
+  // Phones: card list with a +/- stepper instead of a wide table
+  if (isMobile) {
+    return (
+      <MaterielPickerCards
+        title="Liste du matériel"
+        items={allMateriels}
+        onAdd={addOne}
+        onRemove={removeOne}
+      />
+    );
+  }
+
   return (
-    loading ? <Container className="d-flex justify-content-center align-items-center"><Loading /></Container> :  
-    <Container>
+    <Container className="table-view">
       <MaterialTable 
         id="TableID"
         icons={tableIcons}
@@ -132,51 +202,22 @@ function ListMaterieleReservationModify(props) {
           pageSizeOptions:[20,40, 60]  
         }}
         columns={[
-          { title: 'Nom', field: 'label', editable: 'never' },
-          { title: 'Image', field: 'image', render: item => <ModalImage small={item.url_pic} large={item.url_pic} alt={item.label} />, editable: 'never'},
+          { title: 'Nom', field: 'label', cellStyle: { minWidth: 160 }, headerStyle: { minWidth: 160 }, editable: 'never' },
+          { title: 'Image', field: 'image', render: item => <ModalImage className="mat-thumb" small={item.url_pic} large={item.url_pic} alt={item.label} />, editable: 'never'},
           { title: 'Category', field: 'categorie', editable: 'never'},
           { title: 'Disponible', field: 'quantiteDisp', type: 'numeric'},
-          { title: 'Quantite', field: 'Qtotale', type: 'numeric'},
+          { title: 'Quantite', field: 'Qtotale', hidden: isCompact, type: 'numeric'},
           { title: 'Tarif', field: 'tarifLoc', editable: 'never', type: 'currency', currencySetting:{ locale: 'fr-CH',currencyCode:'CHF', minimumFractionDigits:0, maximumFractionDigits:2}},
-          { title: 'Lieu', field: 'lieu', editable: 'never'},
+          { title: 'Lieu', field: 'lieu', hidden: isCompact, editable: 'never'},
           { title: 'Total', field: 'prixTotal', editable: 'never', type: 'currency', currencySetting:{ locale: 'fr-CH',currencyCode:'CHF', minimumFractionDigits:0, maximumFractionDigits:2}}
         ]}
         data={allMateriels}
         actions={[
-          
           rowData => ({
             icon: () => <AddBox style={{color: rowData.quantiteDisp != 0 ? 'blue' : 'red'}}/>,
             tooltip: rowData.quantiteDisp === 0 ? 'Quantite disponible 0' : 'Ajouter matériel à la reservation',
             disabled: rowData.quantiteDisp === 0,
-            onClick: (event, rowData) =>{
-              const dataUpdate = [...allMateriels];
-              const index = rowData.tableData.id;
-
-              if(dataUpdate[index].quantiteDisp !== 0){
-                dataUpdate[index].quantiteDisp -=1;
-                dataUpdate[index].tempMateriel +=1;
-                dataUpdate[index].prixTotal += dataUpdate[index].tarifLoc;
-
-                setAllMateriels([...dataUpdate]);
-                
-                console.log("Added item ", dataUpdate[index])
-
-                const matos = materielRef.current.find(element => element.id === rowData.id);
-
-                if(matos !== undefined){
-                  matos.quantite += 1;
-                }else{
-                  let mat = {
-                    id: rowData.id,
-                    label: rowData.label,
-                    quantite: 1,
-                    tarifLoc: rowData.tarifLoc
-                  }
-
-                  materielRef.current.push(mat);
-                }
-              }           
-            } 
+            onClick: () => addOne(rowData)
           }),
           rowData => ({
             icon: () => <span><h5>{rowData.tempMateriel}</h5></span>,
@@ -186,42 +227,7 @@ function ListMaterieleReservationModify(props) {
             icon: () => <IndeterminateCheckBoxIcon style={{color: rowData.tempMateriel != 0 ? 'blue' : 'red'}}/>,
             disabled: rowData.tempMateriel !== 0 ? false : true,
             tooltip: rowData.tempMateriel !== 0 ? ' Retirer matériel de la réservation' : 'Quantité maximale déjà réservée',
-            onClick : () => {
-              const dataUpdate = [...allMateriels];
-              const index = rowData.tableData.id;
-
-              if(dataUpdate[index].tempMateriel !== 0){
-                dataUpdate[index].quantiteDisp += 1;
-
-                dataUpdate[index].tempMateriel -= 1;
-                dataUpdate[index].prixTotal -= dataUpdate[index].tarifLoc;
-                setAllMateriels([...dataUpdate]);
-
-                const temp = materielRef.current.find(item => item.id === rowData.id)
-                
-                if (temp != undefined) {
-                  temp.quantite -= 1
-                  if(temp.quantite === 0){
-                    //If quantity is 0 remove the objec from json string
-                    materielRef.current.forEach((element, index, object) => {
-                      if(element.quantite === 0){
-                        object.splice(index, 1);
-                      }
-                    })
-                    console.log("Si quantite 0 l'objet efface", materiel)
-                  }
-                }else{
-                  let mat = {
-                    id: rowData.id,
-                    label: rowData.label,
-                    quantite: -1,
-                    tarifLoc: rowData.tarifLoc
-                  }
-
-                  materielRef.current.push(mat);
-                }
-              }
-            }
+            onClick: () => removeOne(rowData)
           })
         ]}
       title="Liste du matériél"

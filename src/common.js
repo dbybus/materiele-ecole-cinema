@@ -16,6 +16,13 @@ module.exports.convertDateToFr = function(date){
     return moment(date).format("DD MMMM YYYY");
 }
 
+// Short form for narrower screens: "24 nov. 2026"
+module.exports.convertDateToFrShort = function(date){
+    moment.locale('FR')
+
+    return moment(date).format("DD MMM YYYY");
+}
+
 module.exports.calcDays = function(startDate, endDate){
     
     var difference_in_time = endDate - startDate;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from 'react';
+import React from 'react';
 import LoginButton from './login-button';
 import LogoutButton from './logout-button';
 import { useAuth0 } from '../auth';
@@ -8,14 +8,16 @@ function ProfileMenu(props){
   const {name, picture} = props
   const { isAuthenticated } = useAuth0();
 
-  return ( 
-    <Dropdown>
-      <Dropdown.Toggle id="dropdown-basic" style={{backgroundColor: '#F8F8F8', color: 'black', borderColor:'#F8F8F8'}}>
-        <span>{name}</span>
-        <img src={picture} alt="User avatar" style={{width: 50, paddingLeft: 10 }}/>
+  return (
+    <Dropdown align="end">
+      <Dropdown.Toggle id="dropdown-basic" className="profile-toggle">
+        {/* Name only on wide screens (≥ 1200px); below that the avatar is enough and the name is in the menu */}
+        <span className="d-none d-xl-inline">{name}</span>
+        <img src={picture} alt="User avatar" className="profile-avatar"/>
       </Dropdown.Toggle>
-    
+
       <Dropdown.Menu>
+        <Dropdown.Header className="d-xl-none">{name}</Dropdown.Header>
         <Dropdown.Item href="/profile">Profile</Dropdown.Item>
         <Dropdown.Item href="/listusers">Utilisateur</Dropdown.Item>
         <Dropdown.Item>{isAuthenticated ? <LogoutButton /> : <LoginButton />}</Dropdown.Item>

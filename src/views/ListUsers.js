@@ -17,11 +17,13 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap';
+import useIsMobile from '../hooks/useIsMobile';
 import {useAuth0} from '../auth'
 import TokenDataService from "../services/token.service"
 
 
 function ListUsers() {
+  const isMobile = useIsMobile();
   //const [user, loading, error] = useAuthState(auth);
   const [allUsers, setAllUsers] = useState([])
   const {user, isAuthenticated} = useAuth0()
@@ -72,9 +74,10 @@ function ListUsers() {
   },[])
 
   return (
-    <Container>
+    <Container className="table-view">
       <MaterialTable 
         icons={tableIcons}
+        options={{ padding: isMobile ? 'dense' : 'default' }}
         
         columns={[
           { title: 'Nom', field: 'name' },

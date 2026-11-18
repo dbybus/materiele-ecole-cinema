@@ -8,6 +8,7 @@ import { useHistory } from 'react-router';
 import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'
 import GeneratePdf from "../components/GeneratePdf"
 import { PDFDownloadLink } from '@react-pdf/renderer';
+import useIsMobile from '../hooks/useIsMobile';
 
 const common = require('../common');
 
@@ -33,7 +34,10 @@ const AddReservation = (props) => {
     const [allMateriele, setAllMateriele] = useState([]);
     const [daysReservation, setDaysReservation] = useState(0)
     const [validated, setValidated] = useState(false);
-    const steps = ['Sélectionner les détails de la réservation', 'Sélectionner des matériels', 'Récapitulatif d\'évènement'];
+    const isMobile = useIsMobile();
+    const steps = isMobile
+        ? ['Détails', 'Matériel', 'Récapitulatif']
+        : ['Sélectionner les détails de la réservation', 'Sélectionner des matériels', 'Récapitulatif d\'évènement'];
     const roleAdmin = user['https://example-api/role'].find(element => element === 'Admin');
     const roleProf = user['https://example-api/role'].find(element => element === 'Prof');
     
@@ -157,7 +161,7 @@ const AddReservation = (props) => {
     }
     return (
         <div>
-            <Stepper activeStep={step}>
+            <Stepper activeStep={step} alternativeLabel style={{ padding: isMobile ? '16px 0' : 24 }}>
                 {steps.map((label, index) => {
                     return (
                         <Step key={label}>
@@ -166,24 +170,25 @@ const AddReservation = (props) => {
                     );
                 })}
             </Stepper>
-            <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
+            {/* MUI v4 Box uses system props directly (the `sx` prop only exists in MUI v5) */}
+            <Box display="flex" flexDirection="row" pt={1} pb={2}>
                 <Button
                 color="inherit"
+                variant="outlined"
                 onClick={previousStep}
-                sx={{ mr: 1 }}
                 >
                 Back
                 </Button>
-                <Box sx={{ flex: "1 1 auto" }} />           
-                <Button onClick={nextStep} disabled={step === 2 || (step === 1 && materiel.length === 0)}>
+                <Box flex="1 1 auto" />
+                <Button color="primary" variant="contained" onClick={nextStep} disabled={step === 2 || (step === 1 && materiel.length === 0)}>
                 Next
                 </Button>
             </Box>
-            {step === 0 && 
-               <Container className="d-flex justify-content-center align-items-center">
-                    <Form noValidate validated={validated}>
+            {step === 0 &&
+               <Container className="d-flex justify-content-center">
+                    <Form noValidate validated={validated} className="w-100" style={{ maxWidth: 720 }}>
                         <Row className="mb-3">
-                            <Form.Group as={Col} md="11" controlId="validationCustom01">
+                            <Form.Group as={Col} xs={12} controlId="validationCustom01">
                                 <Form.Label>Évènement</Form.Label>
                                 <Form.Control
                                     required
@@ -196,7 +201,7 @@ const AddReservation = (props) => {
                             </Form.Group>
                         </Row>
                         <Row className="mb-3">
-                            <Form.Group as={Col} md="11" controlId="validationCustom02">
+                            <Form.Group as={Col} xs={12} controlId="validationCustom02">
                                 <Form.Label>Beneficiaire</Form.Label>
                                 <Form.Control
                                     required
@@ -209,7 +214,7 @@ const AddReservation = (props) => {
                             </Form.Group>
                         </Row>
                         <Row className="mb-3">
-                            <Form.Group as={Col} md="11" controlId="validationCustom02">
+                            <Form.Group as={Col} xs={12} controlId="validationCustom02">
                                 <Form.Label>Lieu</Form.Label>
                                 <Form.Control
                                     required
@@ -235,7 +240,7 @@ const AddReservation = (props) => {
             )}
             {step === 2 && (
                 //loading ? <Loading /> : 
-                <Container style ={{width: '50%'}}>
+                <Container className="mx-auto" style={{ maxWidth: 720 }}>
                     <Row className="mb-3">
                         <h5>Informations :</h5>
                         <ListGroup variant="flush">
