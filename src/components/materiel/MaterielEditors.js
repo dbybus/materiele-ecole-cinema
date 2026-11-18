@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, MenuItem, Select } from '@material-ui/core';
+import { Button, MenuItem, Select, TextField } from '@material-ui/core';
 import { normalize } from './materielUtils';
 
 /**
@@ -18,6 +18,20 @@ export function SelectEditor({ value, onChange, options }) {
     <Select value={current ? current.value : ''} onChange={(e) => onChange(e.target.value)} style={{ minWidth: 110 }}>
       {allOptions.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
     </Select>
+  );
+}
+
+/**
+ * Name + reference in one cell (the "Nom" column shows the reference under the name).
+ * Uses material-table's rowData/onRowDataChange to edit both fields of the row.
+ */
+export function NameRefEditor({ rowData, onRowDataChange }) {
+  const change = (field) => (e) => onRowDataChange({ ...rowData, [field]: e.target.value });
+  return (
+    <div style={{ minWidth: 180 }}>
+      <TextField fullWidth size="small" label="Nom" value={rowData.label || ''} onChange={change('label')} />
+      <TextField fullWidth size="small" label="Référence" value={rowData.ref || ''} onChange={change('ref')} style={{ marginTop: 6 }} />
+    </div>
   );
 }
 

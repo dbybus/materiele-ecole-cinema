@@ -5,7 +5,8 @@ import RemoveIcon from '@material-ui/icons/Remove';
 import SearchIcon from '@material-ui/icons/Search';
 import ModalImage from 'react-modal-image';
 import { labelFor } from './materiel/materielUtils';
-import { CATEGORIES, LIEUX } from '../constants/materiel';
+import { CategoryChip } from './materiel/MaterielDisplay';
+import { LIEUX } from '../constants/materiel';
 
 const PAGE_SIZE = 20;
 
@@ -73,8 +74,9 @@ export default function MaterielPickerCards({ items, onAdd, onRemove, filters, t
 
               <div className="picker-body">
                 <div className="picker-title">{item.label}</div>
-                <div className="picker-meta">
-                  {[labelFor(CATEGORIES, item.categorie), labelFor(LIEUX, item.lieu)].filter(Boolean).join(' · ')}
+                <div className="picker-meta d-flex flex-wrap align-items-center gap-1 my-1">
+                  <CategoryChip categorie={item.categorie} />
+                  <span>{labelFor(LIEUX, item.lieu)}</span>
                 </div>
                 <div className="picker-meta">
                   <span className={soldOut ? 'text-danger' : 'text-success'}>

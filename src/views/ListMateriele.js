@@ -1,30 +1,33 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import MaterialTable from 'material-table';
 import { Container } from 'react-bootstrap';
-import AddBox from '@material-ui/icons/AddBox';
-import ModalImage from 'react-modal-image';
+import { Button } from '@material-ui/core';
+import AddIcon from '@material-ui/icons/Add';
 import MaterieleDataService from '../services/materiele.service';
 import AddMateriele from './AddMateriele';
 import ModalPopup from '../components/ModalPopup';
 import { tableIcons, localizationFr, chfCurrencySetting } from '../components/table/materialTableConfig';
-import { ImageEditor, SelectEditor } from '../components/materiel/MaterielEditors';
+import { ImageEditor, NameRefEditor, SelectEditor } from '../components/materiel/MaterielEditors';
+import { CategoryChip, MaterielThumb, NameWithRef, StockBadge } from '../components/materiel/MaterielDisplay';
+import CategoryFilterChips from '../components/materiel/CategoryFilterChips';
+import MaterielCatalogCards from '../components/materiel/MaterielCatalogCards';
+import MaterielEditDialog from '../components/materiel/MaterielEditDialog';
 import FilterSelect from '../components/materiel/FilterSelect';
-import { ALL, labelFor, matchesFilters, toMaterielPayload } from '../components/materiel/materielUtils';
+import { ALL, labelFor, matchesFilters, normalize, toMaterielPayload } from '../components/materiel/materielUtils';
 import { CATEGORIES, DEGRES, LIEUX } from '../constants/materiel';
 import { useAuth0 } from '../auth';
 import { hasAnyRole, ROLE } from '../auth/roles';
 import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
 import useFitPageSize from '../hooks/useFitPageSize';
 
+// Deleting cascades in the database: say so before it happens
+const DELETE_WARNING = 'Supprimer ce matériel ? Il sera aussi retiré de toutes les réservations.';
+
 const localization = {
   ...localizationFr,
   body: {
     ...localizationFr.body,
-    editRow: {
-      ...localizationFr.body.editRow,
-      // Deleting cascades in the database: say so before it happens
-      deleteText: 'Supprimer ce matériel ? Il sera aussi retiré de toutes les réservations.',
-    },
+    editRow: { ...localizationFr.body.editRow, deleteText: DELETE_WARNING },
   },
 };
 
@@ -37,6 +40,7 @@ function ListMateriele() {
   const [materiels, setMateriels] = useState([]);
   const [filters, setFilters] = useState({ categorie: ALL, lieu: ALL });
   const [showAddPopup, setShowAddPopup] = useState(false);
+  const [editing, setEditing] = useState(null); // item open in the phone edit dialog
 
   // ---------- Data ----------
 
@@ -55,9 +59,14 @@ function ListMateriele() {
     if (!showAddPopup) loadMateriels();
   }, [showAddPopup, loadMateriels]);
 
+  // Location filter only: the category chips count from this list
+  const materielsInLieu = useMemo(
+    () => materiels.filter((m) => matchesFilters(m, { categorie: ALL, lieu: filters.lieu })),
+    [materiels, filters.lieu]
+  );
   const visibleMateriels = useMemo(
-    () => materiels.filter((m) => matchesFilters(m, filters)),
-    [materiels, filters]
+    () => materielsInLieu.filter((m) => matchesFilters(m, { categorie: filters.categorie, lieu: ALL })),
+    [materielsInLieu, filters.categorie]
   );
 
   /**
@@ -112,31 +121,42 @@ function ListMateriele() {
     await loadMateriels();
   };
 
+  // Phones: the ⋮ menu's "Supprimer" (the table has its own inline confirmation)
+  const confirmDelete = (materiel) => {
+    if (window.confirm(`${materiel.label}\n\n${DELETE_WARNING}`)) deleteMateriel(materiel).catch(() => {});
+  };
+
   // ---------- Table setup ----------
 
   // Rows per page = as many as fit in the window, so the table + pagination never scroll the page
   const { containerRef, tableRef, pageSize, pageSizeOptions, onChangeRowsPerPage } =
-    useFitPageSize({ data: visibleMateriels, fallbackRowHeight: isMobile ? 64 : 72 });
+    useFitPageSize({ data: visibleMateriels, fallbackRowHeight: 64 });
 
-  const nameWidth = isCompact ? 160 : 220;
+  const nameWidth = isCompact ? 180 : 240;
   const columns = [
-    // Only "Nom" has no fixed width, so material-table gives it all the remaining space
-    { title: 'Nom', field: 'label', cellStyle: { minWidth: nameWidth }, headerStyle: { minWidth: nameWidth } },
-    { title: 'Référence', field: 'ref', hidden: isMobile, width: 130 },
     {
-      title: 'Image', field: 'image', width: 100, sorting: false, searchable: false,
-      render: (row) => row.url_pic
-        ? <ModalImage className="mat-thumb mat-thumb--sm" small={row.url_pic} large={row.url_pic} alt={row.label} />
-        : null,
+      title: '', field: 'image', width: 72, sorting: false, searchable: false,
+      render: (row) => <MaterielThumb materiel={row} />,
       editComponent: (props) => <ImageEditor value={props.value} onChange={props.onChange} />,
     },
-    { title: 'Quantité', field: 'Qtotale', type: 'numeric', width: 100 },
+    // Only "Nom" has no fixed width, so material-table gives it all the remaining space.
+    // Shows the reference underneath; `ref` stays searchable through customFilterAndSearch.
     {
-      title: 'Catégorie', field: 'categorie', hidden: isMobile, width: 130,
-      render: (row) => labelFor(CATEGORIES, row.categorie),
+      title: 'Nom', field: 'label', cellStyle: { minWidth: nameWidth }, headerStyle: { minWidth: nameWidth },
+      render: (row) => <NameWithRef materiel={row} />,
+      editComponent: (props) => <NameRefEditor rowData={props.rowData} onRowDataChange={props.onRowDataChange} />,
+      customFilterAndSearch: (term, row) => [row.label, row.ref].some((v) => normalize(v).includes(normalize(term))),
+    },
+    {
+      title: 'Catégorie', field: 'categorie', width: 140,
+      render: (row) => <CategoryChip categorie={row.categorie} />,
       editComponent: (props) => <SelectEditor value={props.value} onChange={props.onChange} options={CATEGORIES} />,
     },
-    { title: 'Tarif', field: 'tarifLoc', hidden: isMobile, width: 110, type: 'currency', currencySetting: chfCurrencySetting },
+    {
+      title: 'Stock', field: 'Qtotale', type: 'numeric', width: 100,
+      render: (row) => <StockBadge quantite={row.Qtotale} />,
+    },
+    { title: 'Tarif / jour', field: 'tarifLoc', width: 120, type: 'currency', currencySetting: chfCurrencySetting },
     { title: 'Valeur', field: 'valRemp', hidden: isCompact, width: 120, type: 'currency', currencySetting: chfCurrencySetting },
     {
       title: 'Lieu', field: 'lieu', width: 110,
@@ -145,61 +165,89 @@ function ListMateriele() {
     },
     {
       title: 'Degré', field: 'degre', hidden: isCompact, width: 130, cellStyle: { whiteSpace: 'nowrap' },
-      render: (row) => labelFor(DEGRES, row.degre) ?? 'Aucun',
+      render: (row) => <span className="text-muted">{labelFor(DEGRES, row.degre) ?? 'Aucun'}</span>,
       editComponent: (props) => <SelectEditor value={props.value} onChange={props.onChange} options={DEGRES} />,
     },
   ];
 
-  const toolbarActions = [
-    {
-      icon: () => <FilterSelect value={filters.categorie} options={CATEGORIES} allLabel="Toutes catégories"
-        onChange={(categorie) => setFilters((f) => ({ ...f, categorie }))} />,
-      tooltip: 'Filtrer par catégorie',
-      isFreeAction: true,
-    },
-    {
-      icon: () => <FilterSelect value={filters.lieu} options={LIEUX} allLabel="Tous les lieux"
-        onChange={(lieu) => setFilters((f) => ({ ...f, lieu }))} />,
-      tooltip: 'Filtrer par lieu',
-      isFreeAction: true,
-    },
-    {
-      icon: () => <AddBox color="primary" />,
-      tooltip: 'Ajouter nouveau matériel',
-      isFreeAction: true,
-      hidden: !isAdmin,
-      onClick: () => setShowAddPopup(true),
-    },
-  ];
+  // Filters shared by the table and the phone cards
+  const lieuFilter = (
+    <FilterSelect value={filters.lieu} options={LIEUX} allLabel="Tous les lieux"
+      onChange={(lieu) => setFilters((f) => ({ ...f, lieu }))} />
+  );
+  const categoryChips = (
+    <CategoryFilterChips materiels={materielsInLieu} value={filters.categorie}
+      onChange={(categorie) => setFilters((f) => ({ ...f, categorie }))} />
+  );
 
   // ---------- Render ----------
 
   return (
-    <Container className="table-view" ref={containerRef}>
-      <MaterialTable
-        title="Liste du matériel"
-        tableRef={tableRef}
-        icons={tableIcons}
-        localization={localization}
-        columns={columns}
-        data={visibleMateriels}
-        actions={toolbarActions}
-        onChangeRowsPerPage={onChangeRowsPerPage}
-        options={{
-          padding: 'dense',
-          rowStyle: (row, index) => (index % 2 === 0 ? { background: '#f5f5f5' } : null),
-          pageSize,
-          pageSizeOptions,
-          // Don't pad the last page with blank rows (they made the table as tall as a full page)
-          emptyRowsWhenPaging: false,
-        }}
-        editable={isAdmin ? { onRowUpdate: updateMateriel, onRowDelete: deleteMateriel } : undefined}
-      />
+    <div>
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Matériel</h1>
+          <p className="page-subtitle">
+            {visibleMateriels.length === materiels.length
+              ? `${materiels.length} article${materiels.length > 1 ? 's' : ''}`
+              : `${visibleMateriels.length} sur ${materiels.length} articles`}
+          </p>
+        </div>
+        {isAdmin && (
+          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setShowAddPopup(true)}>
+            {isMobile ? 'Ajouter' : 'Ajouter du matériel'}
+          </Button>
+        )}
+      </header>
 
-      <ModalPopup title="Ajouter nouveau matériel" openPopup={showAddPopup} setOpenPopup={setShowAddPopup}>
+      {isMobile ? (
+        <MaterielCatalogCards
+          items={visibleMateriels}
+          isAdmin={isAdmin}
+          onEdit={setEditing}
+          onDelete={confirmDelete}
+          header={<div className="mt-2">{categoryChips}<div className="picker-filters">{lieuFilter}</div></div>}
+        />
+      ) : (
+        <>
+          {categoryChips}
+          <Container className="table-view materiel-table" ref={containerRef}>
+            <MaterialTable
+              title=""
+              tableRef={tableRef}
+              icons={tableIcons}
+              localization={localization}
+              columns={columns}
+              data={visibleMateriels}
+              actions={[{ icon: () => lieuFilter, tooltip: 'Filtrer par lieu', isFreeAction: true }]}
+              onChangeRowsPerPage={onChangeRowsPerPage}
+              options={{
+                padding: 'dense',
+                showTitle: false,
+                searchFieldAlignment: 'left',
+                searchFieldStyle: { minWidth: 280 },
+                pageSize,
+                pageSizeOptions,
+                // Don't pad the last page with blank rows (they made the table as tall as a full page)
+                emptyRowsWhenPaging: false,
+                actionsColumnIndex: -1, // edit / delete at the end of the row
+              }}
+              editable={isAdmin ? { onRowUpdate: updateMateriel, onRowDelete: deleteMateriel } : undefined}
+            />
+          </Container>
+        </>
+      )}
+
+      <ModalPopup title="Ajouter du matériel" openPopup={showAddPopup} setOpenPopup={setShowAddPopup}>
         <AddMateriele setOpenPopup={setShowAddPopup} />
       </ModalPopup>
-    </Container>
+
+      <MaterielEditDialog
+        materiel={editing}
+        onClose={() => setEditing(null)}
+        onSave={(newData) => updateMateriel(newData, editing)}
+      />
+    </div>
   );
 }
 

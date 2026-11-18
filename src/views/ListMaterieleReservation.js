@@ -9,6 +9,7 @@ import MaterieleDataService from '../services/materiele.service';
 import Loading from '../components/loading';
 import MaterielPickerCards from '../components/MaterielPickerCards';
 import FilterSelect from '../components/materiel/FilterSelect';
+import { CategoryChip } from '../components/materiel/MaterielDisplay';
 import { tableIcons, localizationFr, chfCurrencySetting } from '../components/table/materialTableConfig';
 import {
   ALL, addToSelection, buildPickerRows, labelFor, matchesFilters, removeFromSelection,
@@ -141,7 +142,7 @@ function ListMaterieleReservation({
         ? <ModalImage className="mat-thumb mat-thumb--sm" small={row.url_pic} large={row.url_pic} alt={row.label} />
         : null,
     },
-    { title: 'Catégorie', field: 'categorie', width: 130, render: (row) => labelFor(CATEGORIES, row.categorie) },
+    { title: 'Catégorie', field: 'categorie', width: 140, render: (row) => <CategoryChip categorie={row.categorie} /> },
     {
       title: 'Disponible', field: 'quantiteDisp', type: 'numeric', width: 110,
       cellStyle: (value) => ({ color: value === 0 ? '#c62828' : undefined, fontWeight: value === 0 ? 600 : undefined }),
