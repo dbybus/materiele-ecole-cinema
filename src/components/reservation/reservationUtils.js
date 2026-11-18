@@ -31,26 +31,6 @@ export const toSchedulerEvent = (reservation, readOnly) => ({
   materiel: (reservation.getReservation || []).map(toMaterielLine),
 });
 
-/**
- * Applies the changes made in the "Modifier la liste" dialog to a material list.
- * `changes` holds deltas: { id, label, tarifLoc, quantite: +n | -n }.
- * Returns a new list; lines that drop to 0 are removed.
- */
-export const applyMaterielChanges = (materiels, changes) => {
-  const byId = new Map(materiels.map((m) => [m.id, { ...m }]));
-
-  changes.forEach((change) => {
-    const existing = byId.get(change.id);
-    if (existing) {
-      existing.quantite += change.quantite;
-    } else {
-      byId.set(change.id, { ...change });
-    }
-  });
-
-  return [...byId.values()].filter((m) => m.quantite > 0);
-};
-
 /** Number of days, price per day and total for a period and a material list. */
 export const totalsFor = (start, end, materiel) => {
   const days = Number(common.calcDays(start, end));

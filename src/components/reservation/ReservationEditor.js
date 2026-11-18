@@ -1,8 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { DateTimePickerComponent } from '@syncfusion/ej2-react-calendars';
 import ListMaterieleReservationModify from '../../views/ListMaterieleReservationModify';
 import ModalPopup from '../ModalPopup';
-import { applyMaterielChanges } from './reservationUtils';
 
 const common = require('../../common');
 
@@ -27,27 +26,21 @@ function Field({ label, children }) {
  *  - onMaterielsChange(list): called with the full new material list after "OK" in the dialog
  */
 export default function ReservationEditor({ event, allReservations, onMaterielsChange }) {
-  // Deltas collected by ListMaterieleReservationModify while the dialog is open ({ id, quantite: ±n, ... })
-  const changesRef = useRef([]);
   const [materiels, setMateriels] = useState(event.materiel || []);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // Working copy edited in the dialog: "OK" applies it, "Annuler" throws it away
+  const [draft, setDraft] = useState(null);
+  const dialogOpen = draft !== null;
 
-  const openDialog = () => {
-    changesRef.current = [];
-    setDialogOpen(true);
-  };
-
-  const closeDialog = () => {
-    changesRef.current = [];
-    setDialogOpen(false);
-  };
+  const openDialog = () => setDraft(materiels);
+  const closeDialog = () => setDraft(null);
 
   const confirmDialog = () => {
-    const next = applyMaterielChanges(materiels, changesRef.current);
-    setMateriels(next);
-    onMaterielsChange(next);
+    setMateriels(draft);
+    onMaterielsChange(draft);
     closeDialog();
   };
+
+  const draftCount = (draft || []).reduce((sum, line) => sum + line.quantite, 0);
 
   return (
     <div>
@@ -90,17 +83,24 @@ export default function ReservationEditor({ event, allReservations, onMaterielsC
 
       {/* MUI dialog (React portal): stays centered in the window, scrolls its content, full screen on phones.
           A Syncfusion dialog targeted at <body> is moved outside React's root, so its onClick handlers never fire. */}
-      <ModalPopup title="Modifier le matériel" openPopup={dialogOpen} setOpenPopup={(open) => (open ? openDialog() : closeDialog())}>
-        {/* Mounted only while open, so it always starts from the current list */}
+      <ModalPopup title="Modifier le matériel" maxWidth="lg" openPopup={dialogOpen} setOpenPopup={(open) => (open ? openDialog() : closeDialog())}>
+        {/* Mounted only while open, so it always starts from the current list (the draft) */}
         {dialogOpen && (
           <>
             <ListMaterieleReservationModify
-              materielRef={changesRef}
+              reservation={event}
               allReservations={allReservations}
-              reservation={{ ...event, materiel: materiels }}
+              selection={draft}
+              onSelectionChange={setDraft}
+              bottomGap={120} // dialog footer + the dialog's bottom margin
             />
-            {/* Sticky so OK stays visible while scrolling a long list */}
+            {/* Sticky so OK stays visible while scrolling a long list; shows the draft's total */}
             <div className="materiel-dialog-footer">
+              <span className="me-auto small text-muted align-self-center">
+                {draftCount > 0
+                  ? <><b className="text-body">{draftCount} article{draftCount > 1 ? 's' : ''}</b> · {common.formatCHF(common.calcTotalPrice(draft))}/jour</>
+                  : 'Aucun matériel sélectionné'}
+              </span>
               <button type="button" className="e-control e-btn e-flat" onClick={closeDialog}>Annuler</button>
               <button type="button" className="e-control e-btn e-primary" onClick={confirmDialog}>OK</button>
             </div>

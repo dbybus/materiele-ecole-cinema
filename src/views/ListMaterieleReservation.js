@@ -44,10 +44,15 @@ function QuantityStepper({ row, onAdd, onRemove }) {
  *  - materielReserve:          quantities already reserved by others on the chosen dates [{ id, quantite }]
  *  - allMateriele / setAllMateriele: catalog cache, so going back and forth between steps doesn't refetch
  *  - bottomGap: space to keep free under the table (e.g. for a sticky action bar)
+ *  - compact: always use the narrow column set; showTotalInTitle: false when the total is shown elsewhere
  */
-function ListMaterieleReservation({ materiel, setMateriel, materielReserve, allMateriele, setAllMateriele, bottomGap = 24 }) {
+function ListMaterieleReservation({
+  materiel, setMateriel, materielReserve, allMateriele, setAllMateriele,
+  bottomGap = 24, compact = false, showTotalInTitle = true,
+}) {
   const isMobile = useIsMobile();
-  const isCompact = useIsCompact();
+  // `compact` forces the narrow column set (e.g. inside a dialog, which is narrower than the window)
+  const isCompact = useIsCompact() || compact;
   const { getAccessTokenSilently } = useAuth0();
 
   const [loading, setLoading] = useState(allMateriele.length === 0);
@@ -147,7 +152,7 @@ function ListMaterieleReservation({ materiel, setMateriel, materielReserve, allM
     { title: 'Total / jour', field: 'prixTotal', type: 'currency', currencySetting: chfCurrencySetting, width: 120 },
   ];
 
-  const title = selectedCount > 0
+  const title = showTotalInTitle && selectedCount > 0
     ? `Liste du matériel — ${selectedCount} article${selectedCount > 1 ? 's' : ''}, ${common.formatCHF(perDay)}/jour`
     : 'Liste du matériel';
 

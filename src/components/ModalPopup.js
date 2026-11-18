@@ -20,14 +20,15 @@ const useStyles = makeStyles(theme => ({
 }))
 
 function ModalPopup(props) {
-    const {title, children, openPopup, setOpenPopup} = props;
+    // maxWidth: MUI size ('sm' | 'md' | 'lg' | 'xl'), 'md' by default
+    const {title, children, openPopup, setOpenPopup, maxWidth = 'md'} = props;
     const classes = useStyles();
     const isMobile = useIsMobile();
 
     return (
         <Dialog
             open={openPopup}
-            maxWidth="md"
+            maxWidth={maxWidth}
             fullWidth
             fullScreen={isMobile}
             classes={{ paper: isMobile ? classes.dialogWrapperMobile : classes.dialogWrapper }}
