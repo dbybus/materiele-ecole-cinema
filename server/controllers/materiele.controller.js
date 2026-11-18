@@ -262,6 +262,10 @@ exports.uploadImgMat = async (req, res) => {
 
         res.status(200).send({
           message: "Uploaded the file successfully: " + req.file.originalname,
+          // The name actually written to disk (multer adds a timestamp): clients must store this URL,
+          // not a name they computed themselves (their clock/minute can differ from the server's)
+          filename: req.file.filename,
+          url: "/img/materiels/" + req.file.filename,
         });
       } catch (err) {
         res.status(500).send({

@@ -67,7 +67,7 @@ module.exports.enumToDegree = function(enumDegree){
             return 'Réal. 1ère';
         case 1:
             return 'Réal. 2em';
-        case 1:
+        case 2:
             return 'Journalisme';
         default:
           return 'Aucun';

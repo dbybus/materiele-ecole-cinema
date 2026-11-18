@@ -56,21 +56,14 @@ class MaterieleDataService {
     });
   }
 
-  async uploadImgMat(file, token) {
-    console.log(file);
-    return http.post('/materiele/uploadImgMat', file, {
+  // Resolves with the server response ({ url, filename, message }); rejects on failure so callers can react.
+  // (It used to swallow errors and resolve with undefined, so callers could never know what happened.)
+  uploadImgMat(formData, token) {
+    return http.post('/materiele/uploadImgMat', formData, {
       headers:{
         'content-type': 'multipart/form-data',
-        "Access-Control-Allow-Origin": "*",
-        'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',
         'Authorization': `Bearer ${token}`
       }
-    }).then(result => {
-        // Handle result…
-        console.log(result.data);
-    }).catch((e) => {
-        console.log(e);
-        alert(e)
     });
   }
 

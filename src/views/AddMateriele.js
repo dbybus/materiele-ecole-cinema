@@ -77,7 +77,8 @@ const AddMateriele = (props) => {
         if(image){
             const formData = new FormData();
             formData.append('file', image);
-            MaterieleDataService.uploadImgMat(formData, token);
+            // Same behaviour as before for this form (the service no longer shows the alert itself)
+            MaterieleDataService.uploadImgMat(formData, token).catch((e) => alert(e));
         } 
     }
        
@@ -164,7 +165,7 @@ const AddMateriele = (props) => {
                     <Form.Label>Lieu</Form.Label>
                     <Form.Select className="me-sm-2" id="inlineFormCustomSelect" value={lieu} onChange={(e) => setLieu(e.target.value)}>
                         <option value="Geneve">Genève</option>
-                        <option value="Laussane">Laussane</option>
+                        <option value="Lausanne">Lausanne</option>
                     </Form.Select>
                     <Form.Control.Feedback type="invalid">
                         Please provide a valid zip.
