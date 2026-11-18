@@ -239,11 +239,13 @@ function ListMateriele() {
       )}
 
       <ModalPopup title="Ajouter du matériel" openPopup={showAddPopup} setOpenPopup={setShowAddPopup}>
-        <AddMateriele setOpenPopup={setShowAddPopup} />
+        {/* Closes only once the item exists; closing the popup reloads the list */}
+        <AddMateriele existing={materiels} onCreated={() => setShowAddPopup(false)} onCancel={() => setShowAddPopup(false)} />
       </ModalPopup>
 
       <MaterielEditDialog
         materiel={editing}
+        existing={materiels}
         onClose={() => setEditing(null)}
         onSave={(newData) => updateMateriel(newData, editing)}
       />

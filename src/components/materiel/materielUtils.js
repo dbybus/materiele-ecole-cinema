@@ -62,6 +62,28 @@ export const labelFor = (options, value) => {
   return option ? option.label : value;
 };
 
+/**
+ * Add / edit form validation. Returns { field: message } (empty object = valid).
+ * `existing` = current catalog, used to refuse a reference already taken by another item.
+ */
+export const validateMateriel = (form, existing = [], currentId = null) => {
+  const errors = {};
+  const isNumber = (v) => v !== '' && v !== null && !Number.isNaN(Number(v));
+
+  if (!String(form.label || '').trim()) errors.label = 'Le nom est obligatoire.';
+  if (!isNumber(form.Qtotale) || Number(form.Qtotale) < 0 || !Number.isInteger(Number(form.Qtotale))) {
+    errors.Qtotale = 'Nombre entier, 0 ou plus.';
+  }
+  if (!isNumber(form.tarifLoc) || Number(form.tarifLoc) < 0) errors.tarifLoc = 'Montant de 0 ou plus.';
+  if (form.valRemp !== '' && (!isNumber(form.valRemp) || Number(form.valRemp) < 0)) errors.valRemp = 'Montant de 0 ou plus.';
+
+  const ref = normalize(form.ref);
+  if (ref && existing.some((m) => m.id !== currentId && normalize(m.ref) === ref)) {
+    errors.ref = 'Cette référence est déjà utilisée.';
+  }
+  return errors;
+};
+
 // Fields the API accepts for an update (material-table adds tableData, and the edit row may hold a File)
 const EDITABLE_FIELDS = ['label', 'ref', 'categorie', 'Qtotale', 'tarifLoc', 'valRemp', 'degre', 'lieu', 'url_pic'];
 

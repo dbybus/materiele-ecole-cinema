@@ -51,7 +51,8 @@ exports.create = async (req, res) => {
         Qtotale: req.body.Qtotale,
         tarifLoc: req.body.tarifLoc,
         valRemp: req.body.valRemp,
-        dateAchat: req.body.dateAchat,
+        // The column is spelled "dateAchet" in the model: "dateAchat" was silently dropped by Sequelize
+        dateAchet: req.body.dateAchat || req.body.dateAchet || null,
         //ownerExt: req.body.ownerExt,
         //remarque: req.body.remarque,
         degre: req.body.degre,

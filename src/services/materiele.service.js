@@ -17,19 +17,14 @@ class MaterieleDataService {
     });
   }
 
-  async create(data, token) {
+  // Resolves with the created item; rejects on failure.
+  // (It used to swallow errors and resolve with undefined, so a failed save looked successful.)
+  create(data, token) {
     return http.post("/materiele/create", data, {
       headers:{
         'Authorization': `Bearer ${token}`
       }
-    })
-      .then(result => {
-        // Handle result…
-        console.log(result.data);
-      }).catch((e) => {
-          console.log(e);
-          alert(e)
-      });
+    });
   }
 
   update(id, data, token) {
