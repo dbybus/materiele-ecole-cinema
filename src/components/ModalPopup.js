@@ -7,7 +7,9 @@ const useStyles = makeStyles(theme => ({
     dialogWrapper: {
         padding: theme.spacing(2),
         position: 'absolute',
-        top: theme.spacing(5)
+        top: theme.spacing(5),
+        // Same gap at the bottom as at the top, so a tall dialog never runs past the window
+        maxHeight: `calc(100% - ${theme.spacing(10)}px)`
     },
     dialogWrapperMobile: {
         padding: theme.spacing(1)

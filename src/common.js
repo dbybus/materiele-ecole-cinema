@@ -16,6 +16,12 @@ module.exports.convertDateToFr = function(date){
     return moment(date).format("DD MMMM YYYY");
 }
 
+// "1 250 CHF" (Swiss formatting, up to 2 decimals)
+const chfFormatter = new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 2 });
+module.exports.formatCHF = function(value){
+    return chfFormatter.format(value || 0);
+}
+
 // Short form for narrower screens: "24 nov. 2026"
 module.exports.convertDateToFrShort = function(date){
     moment.locale('FR')

@@ -284,6 +284,20 @@ body,
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* ---------- "Modifier le matériel" dialog (reservation editor) ---------- */
+
+.materiel-dialog-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 0;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+
 /* ---------- Generic helpers ---------- */
 
 .profile-json {

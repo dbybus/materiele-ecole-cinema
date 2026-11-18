@@ -1,480 +1,179 @@
-import React, { useEffect, useState, useRef } from "react";
-import ReservationDataService from "../services/reservation.service"
-import AddReservation from "./AddReservation";
-import { FaUserAlt, FaRegCalendarAlt, FaToolbox, FaRegFilePdf } from 'react-icons/fa'
-import { ListGroup } from "react-bootstrap";
-import {DateTimePickerComponent} from '@syncfusion/ej2-react-calendars'
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import GeneratePdf from "../components/GeneratePdf";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
-    ScheduleComponent, Agenda as Agenda, Month, TimelineMonth, Inject,
-    ViewsDirective, ViewDirective
+    ScheduleComponent, Agenda, Month, TimelineMonth, Inject, ViewsDirective, ViewDirective
 } from '@syncfusion/ej2-react-schedule';
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 import { L10n } from '@syncfusion/ej2-base';
+import ReservationDataService from '../services/reservation.service';
+import AddReservation from './AddReservation';
+import ReservationQuickInfo from '../components/reservation/ReservationQuickInfo';
+import ReservationEditor from '../components/reservation/ReservationEditor';
+import { STATUS_COLORS, toSchedulerEvent, toUpdatePayload } from '../components/reservation/reservationUtils';
 import { useAuth0 } from '../auth';
-import { DialogComponent } from '@syncfusion/ej2-react-popups';
-import ListMaterieleReservationModify from "./ListMaterieleReservationModify";
-import useIsMobile from "../hooks/useIsMobile";
+import { canManageReservations } from '../auth/roles';
+import useIsMobile from '../hooks/useIsMobile';
 
 L10n.load({
     'en-US': {
-        'schedule': {
-            'saveButton': 'Enregistrer',
-            'cancelButton': 'Fermer',
-            'deleteButton': 'Supprimer',
-            'editEvent': 'Modifier la réservation',
+        schedule: {
+            saveButton: 'Enregistrer',
+            cancelButton: 'Fermer',
+            deleteButton: 'Supprimer',
+            editEvent: 'Modifier la réservation',
         },
-    }
+    },
 });
 
-const common = require('../common');
+const VIEWS = [Agenda, TimelineMonth, Month];
 
 function Reservation() {
-    const [approvedReservations, setApprovedReservervations] = useState([]);
-    const [toggle, setToggle] = useState(false);
-    const { user,  getAccessTokenSilently} = useAuth0();
-    const matos = useRef([]);
-    const defaultDialog = useRef(null);
-    const materielRef = useRef([]);
-    const [token, setToken] = useState();
+    const { user, getAccessTokenSilently } = useAuth0();
     const isMobile = useIsMobile();
+    const location = useLocation();
+    const canManage = canManageReservations(user);
 
-    function toggleReservation() {
-        setToggle(true);
-    }
+    const [reservations, setReservations] = useState([]);
+    const [showAddForm, setShowAddForm] = useState(false);
+    // Fixed at mount: a new Date on every render would jump the calendar back to today after each refresh
+    const [initialDate] = useState(() => new Date());
+    // Full material list chosen in the editor's "Modifier la liste" dialog (null = not changed)
+    const changedMaterielsRef = useRef(null);
 
-    const getAllReservations = async () => {       
-        getAccessTokenSilently().then(token =>{
-            setToken(token);
-            ReservationDataService.getAll(token).then(response => {
-                setApprovedReservervations(user['https://example-api/role'].find(element => element === 'Admin') !== undefined 
-                || user['https://example-api/role'].find(element => element === 'Prof') !== undefined 
-                ? response.data : response.data.filter(item => item.isApproved));
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-        })
+    // ---------- Data ----------
+
+    const loadReservations = useCallback(async () => {
+        try {
+            const token = await getAccessTokenSilently();
+            const { data } = await ReservationDataService.getAll(token);
+            // Students only see approved reservations; admins and teachers see everything
+            setReservations(canManage ? data : data.filter((r) => r.isApproved));
+        } catch (error) {
+            console.error('Could not load reservations', error);
+        }
+    }, [getAccessTokenSilently, canManage]);
+
+    // Load on arrival, and again on every navigation: AddReservation navigates to /Reservation when it's
+    // done or cancelled. That's this same page, so it doesn't remount; close the form and refresh instead.
+    useEffect(() => {
+        setShowAddForm(false);
+        if (user) loadReservations();
+    }, [user, location.key, loadReservations]);
+
+    const events = useMemo(
+        () => reservations.map((r) => toSchedulerEvent(r, !canManage)),
+        [reservations, canManage]
+    );
+
+    const updateReservation = async (event) => {
+        try {
+            const token = await getAccessTokenSilently();
+            await ReservationDataService.update(event.Id, toUpdatePayload(event, changedMaterielsRef.current), token);
+        } catch (error) {
+            console.error('Could not update reservation', error);
+            alert("La réservation n'a pas pu être enregistrée.");
+        } finally {
+            changedMaterielsRef.current = null;
+            loadReservations(); // reload after the request finished (the old code reloaded the page mid-request)
+        }
     };
 
-    useEffect(() => {
-        if(user){
-            getAllReservations();
+    const deleteReservation = async (event) => {
+        try {
+            const token = await getAccessTokenSilently();
+            await ReservationDataService.delete(event.Id, token);
+        } catch (error) {
+            console.error('Could not delete reservation', error);
+            alert("La réservation n'a pas pu être supprimée.");
+        } finally {
+            loadReservations();
         }
-    }, [user]);
+    };
 
-    const agendaItems = () => {
-        var reservation = [];  
-        var isReadOnly = true;
-            
-        if(user['https://example-api/role'].find(element => element === 'Admin')  !== undefined || user['https://example-api/role'].find(element => element === 'Prof') !== undefined){
-            isReadOnly = false;
+    // ---------- Scheduler callbacks ----------
+
+    const onPopupOpen = (args) => {
+        const isExistingEvent = args.data && args.data.Id !== undefined;
+
+        // Clicking an empty cell must not open the quick "new event" popup or the editor:
+        // reservations are created with the "Ajouter une Réservation" wizard.
+        if (args.type === 'QuickInfo' && args.target &&
+            (args.target.classList.contains('e-work-cells') || args.target.classList.contains('e-header-cells'))) {
+            args.cancel = true;
         }
-
-        approvedReservations.map(item => {
-            var materiels = [];
-
-            item.getReservation.forEach((element) => {
-                element.getMateriel.quantite = element.quantite;
-                materiels.push(element.getMateriel);
-            })   
-
-            reservation.push({
-                Id: item.id,
-                Subject: item.titre,
-                StartTime: new Date(item.date_start),
-                EndTime : new Date(item.date_end),
-                IsAllDay: false,
-                ref: item.ref,
-                materiel: materiels,
-                beneficiaire: item.beneficiaire,
-                createur: item.createur,
-                createurEmail: item.createurEmail,
-                beneficiaire: item.beneficiaire,
-                lieu: item.lieu,
-                IsReadonly : isReadOnly,
-                isApproved: item.isApproved,
-            })
-        })
-
-        return reservation;
-    }
-
-    const content = (props) => {    
-        console.log(props)
-        if(props.elementType === 'event'){
-            return (
-                <div>
-                    {
-                        <div className="e-date-time">
-                            <div><FaRegCalendarAlt size={14}/></div>
-                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                du {common.convertDateToFr(props.StartTime)} au {common.convertDateToFr(props.EndTime)} ({common.calcDays(props.StartTime, props.EndTime)} jours)
-                            </div>                
-                        </div>
-                    }
-                    {
-                        <div className="e-date-time">
-                            <div><FaUserAlt size={14}/></div>
-                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                {props.beneficiaire}
-                            </div>                
-                        </div>
-                    }
-                    {
-                        <div className="e-date-time">
-                            <div><FaToolbox  size={14}/></div>
-                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                    <p>Matériel</p>
-                                    <ListGroup variant="flush">
-                                        {props.materiel.map(item =>{
-                                            return(
-                                                <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label} = ${item.tarifLoc} -.CHF`}</ListGroup.Item>
-                                            ) 
-                                        })}
-                                    </ListGroup>
-                            </div>                
-                        </div>
-                    }
-                    {
-                        <div className="e-date-time">
-                            <div><FaRegFilePdf size={14}/></div>
-                            <div className="e-date-time-wrapper e-text-ellipsis" style={{paddingLeft: 15}}>
-                                <p>Devis</p>
-                                <PDFDownloadLink  document= {<GeneratePdf reservationName={props.Subject} ref={props.ref} beneficiaire={props.beneficiaire} lieu={props.lieu} from={props.StartTime} to={props.EndTime} 
-                                    quantiteMateriel={props.materiel} totalSum={common.calcTotalPrice(props.materiel)} daysReservation={common.calcDays(props.StartTime, props.EndTime)} totalSumWithDays={common.calcTotalPrice(props.materiel)*common.calcDays(props.StartTime, props.EndTime)}
-                                    creatorEmail={props.createurEmail} />} 
-                                    fileName="fee_acceptance.pdf">
-                                    {({ blob, url, loading, error }) => (loading ? 'Chargement du devis...' : 'Téléchargez votre devis')}
-                                </PDFDownloadLink>
-                            </div>                
-                        </div>
-                    }
-                </div>                                                                      
-            );
-        }else{
-            return null;
+        if (args.type === 'Editor' && !isExistingEvent) {
+            args.cancel = true;
         }
-    }
-
-    const onPopupOpen = (props) =>{
-        console.log("POPUP open ", props)
-        
-        if(props.type === 'DeleteAllert' && props.data.Id !== undefined){
-            ReservationDataService.delete(props.data.Id, token).then(console.log(`Reservation with Id: ${props.data.Id} was deleted successfully`))
-            .catch(error => console.log(error));
+        if (args.type === 'Editor') {
+            changedMaterielsRef.current = null;
         }
+        // Note: nothing is deleted here. The old code deleted as soon as the confirmation
+        // dialog *opened*, so "Cancel" still deleted. Deletion now happens in onActionComplete.
+    };
 
-        if (props.type === "QuickInfo") {
-            let isCell = props.target.classList.contains('e-work-cells') || props.target.classList.contains('e-header-cells'); 
-            
-            if(isCell){
-                props.cancel = true; 
-            }
-        }
-        
-        if (props.data.Id === undefined && props.type == 'Editor') //to prevent the editor on cells 
-        { 
-            props.cancel = true;        
-        } 
+    const onActionComplete = (args) => {
+        const event = args.data && args.data[0];
+        if (!event) return;
 
-        if (props.data.Id !== undefined && props.type == 'Editor') //to prevent the editor on cells 
-        { 
-            const table = document.getElementById("custom-event-editor"); 
-                   
-            //setMaterielReserve(props.data.materiel); 
-            props.data.materiel && props.data.materiel.map((item, index) => {
-                    // Create an <input> element, set its type and name attributes
-                    //matos.push(item);
-                    var tr = document.createElement("tr");
-                    tr.className = "materiel_tr"
-                    var tdLabel = document.createElement("td");
-                    
-                    if(index === 0){
-                        var text = document.createTextNode("Matériel");
-                        tdLabel.className = "e-textlabel"
-                        tdLabel.appendChild(text);
-                    }
+        if (args.requestType === 'eventChanged') updateReservation(event);
+        if (args.requestType === 'eventRemoved') deleteReservation(event);
+    };
 
-                    var tdMateriel = document.createElement("td");
-                    tdMateriel.style.colspan = 10; 
-                   
-                    var input = document.createElement("input");
-                    input.type = "text";
-                    input.name = item.label;
-                    input.value = item.quantite + " x " +item.label + " = " + item.tarifLoc;
-                    input.className = "e-field e-input";
-                    input.disabled = true;
- 
-                    tdMateriel.appendChild(input)
-                    tr.appendChild(tdLabel);
-                    tr.appendChild(tdMateriel);
-                    table.appendChild(tr)
-            })
+    const onEventRendered = (args) => {
+        args.element.style.backgroundColor = args.data.isApproved ? STATUS_COLORS.approved : STATUS_COLORS.pending;
+    };
 
-            var tr = document.createElement("tr");
-            tr.className = "materiel_tr"
-            var td = document.createElement("td");
-            var button = document.createElement("button");
-            button.innerHTML = "Modifier la liste";
-            button.type = "button";
-            button.className = "e-control e-btn";
-            button.onclick = function()
-            {
-                defaultDialog.current.show()
-                //materielRef.current = [];
-            }
+    // Stable objects so the scheduler doesn't re-process its options on every render
+    const eventSettings = useMemo(() => ({ dataSource: events }), [events]);
+    const quickInfoTemplates = useMemo(() => ({
+        content: (props) => (props.elementType === 'event' ? <ReservationQuickInfo event={props} /> : null),
+    }), []);
+    const editorTemplate = (props) => (
+        <ReservationEditor
+            key={props.Id}
+            event={props}
+            allReservations={reservations}
+            onMaterielsChange={(list) => { changedMaterielsRef.current = list; }}
+        />
+    );
 
-            td.appendChild(button);
-            tr.appendChild(document.createElement("td"));
-            tr.appendChild(td);
-            table.appendChild(tr)
-        }
-    }
+    // ---------- Render ----------
 
-    const popupClose = (props) => {
-        if(props.data === null){
-            materielRef.current = [];
-            matos.current = [];
-        }
-        
-    }
-
-    const actionComplete = (props) => {
-       console.log("updated materiel ", matos.current)
-        if(props.requestType === "eventChanged"){
-            let data = {
-                id: props.data[0].Id,
-                titre: props.data[0].Subject,
-                date_start: props.data[0].StartTime,
-                date_end: props.data[0].EndTime,
-                lieu: props.data[0].lieu,
-                beneficiaire: props.data[0].beneficiaire,
-                isApproved: props.data[0].isApproved,
-                materiel: matos.current
-            }
-
-            ReservationDataService.update(props.data[0].Id, data, token).then(() =>
-            {
-                console.log("Reservation succesfully updated");                
-            }).catch(error => {
-                console.log(error)
-            });
-            window.location.reload();
-        }else if(props.requestType === "eventRemoved"){
-            ReservationDataService.delete(props.data[0].Id, token).then(() =>
-            {
-                console.log("Reservation succesfully deleted");
-            }).catch(error => {
-                console.log(error)
-            });
-        }
-
-       materielRef.current = [];
-       matos.current = [];
-    }
-
-    const contentDialog = (props) => {
-        console.log(props)
-        return (
-            <div className="dialogContent" id="dialogContent1">
-                {props.materiel && <ListMaterieleReservationModify key={new Date().getTime()} id="TableID" materielRef={materielRef} allReservations={approvedReservations} reservation={props} />} 
-            </div>
-        );
-    }
-    function removeElementsByClass(className){
-        var elements = document.getElementsByClassName(className);
-        while(elements.length > 0){
-            elements[0].parentNode.removeChild(elements[0]);
-        }
-    }
-    const editorTemplate = (props) =>{
-        
-        
-        const buttons = [{
-            buttonModel: {
-                content: 'OK',
-                cssClass: 'e-flat',
-                isPrimary: true,
-            },
-            'click': () => {
-                console.log(props)
-                var materiels = []
-
-                props.materiel && props.materiel.map((item, index) => {
-
-                    const find = materiels.find(mat => mat.id === item.id);
-
-                    if(find !== undefined){
-                        find.quantite += item.quantite;
-                    }else{
-                        materiels.push(item);
-                    }
-                })
-
-                materielRef.current && materielRef.current.map((item, index) => {
-
-                    const find = materiels.find(mat => mat.id === item.id);
-
-                    if(find !== undefined){
-                        find.quantite += item.quantite;
-                    }else{
-                        materiels.push(item);
-                    }
-                })
-
-                const table = document.getElementById("custom-event-editor");
-
-                removeElementsByClass("materiel_tr")
-
-                materiels && materiels.map((item, index) => {
-                    // Create an <input> element, set its type and name attributes
-                    if(item.quantite !==0){
-                        var tr = document.createElement("tr");
-                        tr.className = "materiel_tr"
-                        var tdLabel = document.createElement("td");
-                        
-                        if(index === 0){
-                            var text = document.createTextNode("Matériel");
-                            tdLabel.className = "e-textlabel"
-                            tdLabel.appendChild(text);
-                        }
-
-                        var tdMateriel = document.createElement("td");
-                        tdMateriel.style.colspan = 10; 
-                    
-                        var input = document.createElement("input");
-                        input.type = "text";
-                        input.name = item.label;
-                        input.value = item.quantite + " x " +item.label + " = " + item.tarifLoc;
-                        input.className = "e-field e-input";
-                        input.disabled = true;
-
-                        tdMateriel.appendChild(input)
-                        tr.appendChild(tdLabel);
-                        tr.appendChild(tdMateriel);
-                        table.appendChild(tr)
-                    }
-                })
-            
-                var tr = document.createElement("tr");
-                tr.className = "materiel_tr"
-                var td = document.createElement("td");
-                var button = document.createElement("button");
-                button.innerHTML = "Modifier la liste";
-                button.type = "button";
-                button.className = "e-control e-btn";
-                button.onclick = function()
-                {
-                    defaultDialog.current.show();
-                }
-
-                td.appendChild(button);
-                tr.appendChild(document.createElement("td"));
-                tr.appendChild(td);
-                table.appendChild(tr);
-
-                defaultDialog.current.hide();
-
-                matos.current = [...materiels];
-            }
-        },
-        /* {
-            buttonModel: {
-                content: 'Cancel',
-                cssClass: 'e-flat'
-            },
-            'click': () => {
-                console.log(props)
-                console.log(defaultDialog.current)
-                props.materiel.splice(0, materielRef.current.length)
-                materielRef.current.splice(0, materielRef.current.length)
-
-                allMaterieleRef.current.splice(0,  allMaterieleRef.current.length);
-                
-                defaultDialog.current.hide();
-                canceledRef.current = true;
-                console.log(canceledRef)
-            }
-        } */];
-        
-        return (
-            <div>
-                <table className="custom-event-editor" id="custom-event-editor" style={{ width: '100%', cellpadding: '5' }}>
-                    <tbody>
-                        <tr>
-                            <td className="e-textlabel">Titre</td><td style={{ colspan: '4' }}>
-                                <input id="Subject" className="e-field e-input" type="text" name="Subject" style={{ width: '100%' }} />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="e-textlabel">Beneficiaire</td><td style={{ colspan: '4' }}>
-                                <input id="beneficiaire" className="e-field e-input" type="text" name="beneficiaire" style={{ width: '100%' }} />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="e-textlabel">Lieu</td><td style={{ colspan: '4' }}>
-                                <input id="lieu" className="e-field e-input" type="text" name="lieu" style={{ width: '100%' }} />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="e-textlabel">From</td><td style={{ colspan: '4' }}>
-                                <DateTimePickerComponent id="StartTime" format='dd/MM/yy hh:mm a' data-name="StartTime" value={new Date(props.startTime || props.StartTime)} className="e-field"></DateTimePickerComponent>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="e-textlabel">To</td><td style={{ colspan: '4' }}>
-                                <DateTimePickerComponent id="EndTime" format='dd/MM/yy hh:mm a' data-name="EndTime" value={new Date(props.endTime || props.EndTime)} className="e-field"></DateTimePickerComponent>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="e-textlabel">Valider</td><td style={{ colspan: '4' }}>
-                                <input id="isApproved" name="isApproved" className="e-field e-control" type="checkbox"/>
-                            </td>
-                        </tr>
-                    </tbody> 
-                </table>
-                <DialogComponent key={new Date().getTime()} allowDragging={true} buttons={buttons} modal={true} showCloseIcon={true} width={isMobile ? '95%' : '80%'} height='auto' visible={false} ref={defaultDialog} closeOnEscape={true} content={() => contentDialog(props)} /> 
-            </div>
-        );
-    }
-
-    const eventRender = (props) => {
-        if(props.data.isApproved){
-            props.element.style.backgroundColor = 'green'
-        }else{
-            props.element.style.backgroundColor = 'orange'
-        }
+    if (showAddForm) {
+        return <AddReservation allReservations={reservations} />;
     }
 
     return (
         <div>
-            {toggle && <AddReservation allReservations={approvedReservations} />}
-            {!toggle && 
-                <div>
-                    <ButtonComponent id='add' title='Add' cssClass='e-primary add-reservation-btn' onClick={toggleReservation}>Ajouter une Réservation</ButtonComponent>
-                    {/* key forces a clean re-mount when switching between phone and desktop layouts */}
-                    <ScheduleComponent key={isMobile ? 'mobile' : 'desktop'} width='100%'
-                        // Fill the window below the navbar and button, but never shrink below a usable size
-                        height={isMobile ? 'calc(100vh - 200px)' : 'max(480px, calc(100vh - 190px))'}
-                        currentView={isMobile ? 'Agenda' : 'TimelineMonth'}
-                        enableAdaptiveUI={isMobile}
-                        selectedDate={Date.now()} quickInfoTemplates={{content : content}} eventSettings={{ dataSource: agendaItems()}} actionComplete={actionComplete}
-                        popupClose={popupClose} editorTemplate={editorTemplate} popupOpen={onPopupOpen} eventRendered={eventRender}
-                    >
-                        <ViewsDirective>
-                            <ViewDirective option='Month' />
-                            <ViewDirective option='TimelineMonth' />
-                            <ViewDirective option='Agenda' />
-                        </ViewsDirective>
-                        <Inject services={[Agenda, TimelineMonth,  Month]} />
-                    </ScheduleComponent>
-                </div>
-            
-            }
+            <ButtonComponent cssClass="e-primary add-reservation-btn" onClick={() => setShowAddForm(true)}>
+                Ajouter une Réservation
+            </ButtonComponent>
+
+            {/* key forces a clean re-mount when switching between phone and desktop layouts */}
+            <ScheduleComponent
+                key={isMobile ? 'mobile' : 'desktop'}
+                width="100%"
+                // Fill the window below the navbar and button, but never shrink below a usable size
+                height={isMobile ? 'calc(100vh - 200px)' : 'max(480px, calc(100vh - 190px))'}
+                currentView={isMobile ? 'Agenda' : 'TimelineMonth'}
+                enableAdaptiveUI={isMobile}
+                selectedDate={initialDate}
+                eventSettings={eventSettings}
+                quickInfoTemplates={quickInfoTemplates}
+                editorTemplate={editorTemplate}
+                popupOpen={onPopupOpen}
+                actionComplete={onActionComplete}
+                eventRendered={onEventRendered}
+            >
+                <ViewsDirective>
+                    <ViewDirective option="Month" />
+                    <ViewDirective option="TimelineMonth" />
+                    <ViewDirective option="Agenda" />
+                </ViewsDirective>
+                <Inject services={VIEWS} />
+            </ScheduleComponent>
         </div>
-    )
+    );
 }
 
-export default Reservation
+export default Reservation;
