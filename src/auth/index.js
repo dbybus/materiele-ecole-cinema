@@ -11,7 +11,7 @@ export const AUTH_DISABLED = process.env.REACT_APP_AUTH_DISABLED === 'true';
 // (components use `user` as a useEffect dependency).
 const devUser = {
   name: 'Dev User',
-  email: 'dev@localhost',
+  email: 'dev@example.com', // must look like a real address: the reservation form validates emails
   picture: 'https://www.gravatar.com/avatar/?d=mp',
   'https://example-api/role': ['Admin'],
 };

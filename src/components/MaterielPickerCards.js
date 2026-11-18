@@ -4,6 +4,8 @@ import AddIcon from '@material-ui/icons/Add';
 import RemoveIcon from '@material-ui/icons/Remove';
 import SearchIcon from '@material-ui/icons/Search';
 import ModalImage from 'react-modal-image';
+import { labelFor } from './materiel/materielUtils';
+import { CATEGORIES, LIEUX } from '../constants/materiel';
 
 const PAGE_SIZE = 20;
 
@@ -21,7 +23,7 @@ const chf = (value) =>
  *  - selection: optional full selection [{ quantite, tarifLoc }] for the summary bar. Pass it when `items`
  *              is filtered, otherwise selected items hidden by a filter would be missing from the total.
  */
-export default function MaterielPickerCards({ items, onAdd, onRemove, filters, title, selection }) {
+export default function MaterielPickerCards({ items, onAdd, onRemove, filters, title, selection, showSummary = true }) {
   const [search, setSearch] = useState('');
   const [visible, setVisible] = useState(PAGE_SIZE);
 
@@ -72,7 +74,7 @@ export default function MaterielPickerCards({ items, onAdd, onRemove, filters, t
               <div className="picker-body">
                 <div className="picker-title">{item.label}</div>
                 <div className="picker-meta">
-                  {[item.categorie, item.lieu].filter(Boolean).join(' · ')}
+                  {[labelFor(CATEGORIES, item.categorie), labelFor(LIEUX, item.lieu)].filter(Boolean).join(' · ')}
                 </div>
                 <div className="picker-meta">
                   <span className={soldOut ? 'text-danger' : 'text-success'}>
@@ -102,7 +104,7 @@ export default function MaterielPickerCards({ items, onAdd, onRemove, filters, t
         </button>
       )}
 
-      {selectedCount > 0 && (
+      {showSummary && selectedCount > 0 && (
         <div className="picker-summary">
           <span><b>{selectedCount}</b> article{selectedCount > 1 ? 's' : ''} sélectionné{selectedCount > 1 ? 's' : ''}</span>
           <span><b>{chf(selectedTotal)}</b>/jour</span>

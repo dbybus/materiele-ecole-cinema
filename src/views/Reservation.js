@@ -5,6 +5,8 @@ import {
 } from '@syncfusion/ej2-react-schedule';
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 import { L10n } from '@syncfusion/ej2-base';
+import { Snackbar } from '@material-ui/core';
+import { Alert } from 'react-bootstrap';
 import ReservationDataService from '../services/reservation.service';
 import AddReservation from './AddReservation';
 import ReservationQuickInfo from '../components/reservation/ReservationQuickInfo';
@@ -59,6 +61,12 @@ function Reservation() {
         setShowAddForm(false);
         if (user) loadReservations();
     }, [user, location.key, loadReservations]);
+
+    // Message passed by AddReservation after a successful save (history.push(path, { flash }))
+    const [flash, setFlash] = useState(null);
+    useEffect(() => {
+        if (location.state && location.state.flash) setFlash(location.state.flash);
+    }, [location.key, location.state]);
 
     const events = useMemo(
         () => reservations.map((r) => toSchedulerEvent(r, !canManage)),
@@ -172,6 +180,13 @@ function Reservation() {
                 </ViewsDirective>
                 <Inject services={VIEWS} />
             </ScheduleComponent>
+
+            <Snackbar open={!!flash} autoHideDuration={5000} onClose={() => setFlash(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                <Alert variant="success" className="mb-0 shadow" onClose={() => setFlash(null)} dismissible>
+                    {flash}
+                </Alert>
+            </Snackbar>
         </div>
     );
 }

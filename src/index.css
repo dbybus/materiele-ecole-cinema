@@ -26,16 +26,17 @@ body,
 
 /* Fluid page width: grows with the window, capped so lines don't get too long on big monitors.
    The navbar uses the same width so the logo lines up with the content. */
-.page-container,
-.page-width {
+/* (.container-fluid prefix: Bootstrap's own .container-fluid padding is loaded after this file and would win) */
+.container-fluid.page-container,
+.container-fluid.page-width {
   max-width: 1600px;
   padding-left: 16px;
   padding-right: 16px;
 }
 
 @media (min-width: 992px) {
-  .page-container,
-  .page-width {
+  .container-fluid.page-container,
+  .container-fluid.page-width {
     padding-left: 32px;
     padding-right: 32px;
   }
@@ -298,6 +299,234 @@ body,
   border-top: 1px solid #e0e0e0;
 }
 
+/* ---------- Reservation wizard ---------- */
+
+.wizard-header {
+  margin-bottom: 8px;
+}
+
+.wizard-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.wizard-subtitle {
+  color: #6c757d;
+  margin: 2px 0 0;
+}
+
+.wizard-header .MuiStepper-root {
+  padding: 20px 0 12px;
+  background: transparent;
+}
+
+/* White card used for each block of a step */
+.wizard-card {
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  padding: 20px;
+  height: 100%;
+}
+
+.wizard-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.wizard-card-title .MuiSvgIcon-root {
+  color: #3f51b5;
+}
+
+.wizard-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Recap line at the top of steps 2 and 3 */
+.wizard-recap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: #f4f5fd;
+  border-radius: 8px;
+  color: #303f9f;
+  font-size: 0.9rem;
+}
+
+.wizard-recap span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wizard-recap .MuiSvgIcon-root {
+  font-size: 1.1rem;
+}
+
+/* Selected items, shown above the equipment table */
+.wizard-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Sticky action bar: always reachable, with a live recap in the middle */
+.wizard-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 12px 0;
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid #e3e6ea;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.wizard-actions-info {
+  flex: 1;
+  text-align: center;
+  color: #495057;
+  font-size: 0.92rem;
+  min-width: 0;
+}
+
+.wizard-actions-info b {
+  color: #212529;
+}
+
+/* Period summary in step 1 */
+.period-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  font-size: 0.9rem;
+}
+
+.period-summary dt {
+  font-weight: 400;
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.period-summary dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Step 3: price table and details list */
+.summary-table {
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.summary-table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #e3e6ea;
+}
+
+.summary-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.summary-table .num {
+  text-align: right;
+  white-space: nowrap;
+  padding-left: 12px;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 14px 0 0;
+}
+
+.summary-total-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #303f9f;
+}
+
+.details-list {
+  margin: 0;
+}
+
+.details-list > div {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.details-list > div:last-child {
+  border-bottom: none;
+}
+
+.details-list .MuiSvgIcon-root {
+  color: #9aa0a6;
+  margin-top: 2px;
+}
+
+.details-list dt {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #6c757d;
+}
+
+.details-list dd {
+  margin: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767.98px) {
+  .wizard-title {
+    font-size: 1.25rem;
+  }
+
+  .wizard-card {
+    padding: 14px;
+  }
+
+  .wizard-actions {
+    margin-top: 16px;
+    padding: 10px 0;
+    gap: 8px;
+  }
+
+  .wizard-actions-info {
+    font-size: 0.82rem;
+  }
+
+  .summary-total-amount {
+    font-size: 1.3rem;
+  }
+}
+
 /* ---------- Reservation period picker (react-day-picker) ---------- */
 
 .Selectable .DayPicker-Day--selected:not(.DayPicker-Day--start):not(.DayPicker-Day--end):not(.DayPicker-Day--outside) {
@@ -330,7 +559,7 @@ body,
 /* ---------- Phones / small tablets ---------- */
 
 @media (max-width: 767.98px) {
-  .page-container {
+  .container-fluid.page-container {
     padding-left: 8px;
     padding-right: 8px;
   }

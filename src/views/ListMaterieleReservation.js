@@ -43,8 +43,9 @@ function QuantityStepper({ row, onAdd, onRemove }) {
  *  - materiel / setMateriel:   the selection [{ id, ref, label, tarifLoc, quantite }]
  *  - materielReserve:          quantities already reserved by others on the chosen dates [{ id, quantite }]
  *  - allMateriele / setAllMateriele: catalog cache, so going back and forth between steps doesn't refetch
+ *  - bottomGap: space to keep free under the table (e.g. for a sticky action bar)
  */
-function ListMaterieleReservation({ materiel, setMateriel, materielReserve, allMateriele, setAllMateriele }) {
+function ListMaterieleReservation({ materiel, setMateriel, materielReserve, allMateriele, setAllMateriele, bottomGap = 24 }) {
   const isMobile = useIsMobile();
   const isCompact = useIsCompact();
   const { getAccessTokenSilently } = useAuth0();
@@ -90,7 +91,7 @@ function ListMaterieleReservation({ materiel, setMateriel, materielReserve, allM
   // ---------- Table setup ----------
 
   const { containerRef, tableRef, pageSize, pageSizeOptions, onChangeRowsPerPage } =
-    useFitPageSize({ data: rows, fallbackRowHeight: 64 });
+    useFitPageSize({ data: rows, fallbackRowHeight: 64, bottomGap });
 
   const filterControls = {
     categorie: (
@@ -114,6 +115,7 @@ function ListMaterieleReservation({ materiel, setMateriel, materielReserve, allM
         title="Liste du matériel"
         items={rows}
         selection={materiel}
+        showSummary={false} // the wizard's action bar already shows the selection total
         onAdd={addOne}
         onRemove={removeOne}
         filters={<>{filterControls.categorie}{filterControls.lieu}</>}

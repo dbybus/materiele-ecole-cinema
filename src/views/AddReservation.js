@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Stepper, Step, StepLabel, Button, Box } from '@material-ui/core';
+import { Stepper, Step, StepLabel, Button, CircularProgress } from '@material-ui/core';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
+import CheckIcon from '@material-ui/icons/Check';
 import ListMaterieleReservation from './ListMaterieleReservation';
 import ReservationDetailsForm from '../components/reservation/ReservationDetailsForm';
 import ReservationSummary from '../components/reservation/ReservationSummary';
+import ReservationRecap from '../components/reservation/ReservationRecap';
+import SelectionChips from '../components/reservation/SelectionChips';
 import {
     peakReservedQuantities, toCreatePayload, toReservationPeriod, totalsFor, validateDetails,
 } from '../components/reservation/reservationUtils';
@@ -20,6 +25,11 @@ const STEP_LABELS = {
 };
 
 const EMPTY_DETAILS = { titre: '', beneficiaire: '', lieu: '', from: null, to: null };
+
+// Space kept free under the equipment table for the sticky action bar
+const ACTION_BAR_HEIGHT = 96;
+
+const common = require('../common');
 
 const periodKey = ({ from, to }) => `${from ? from.getTime() : ''}-${to ? to.getTime() : ''}`;
 
@@ -97,6 +107,8 @@ function AddReservation({ allReservations }) {
     };
 
     const canGoNext = step === STEP.DETAILS || (step === STEP.MATERIEL && materiel.length > 0);
+    // Admins and teachers' reservations are approved directly (UI only: the API must enforce this too)
+    const autoApprove = canManageReservations(user);
 
     // ---------- Save ----------
 
@@ -105,10 +117,12 @@ function AddReservation({ allReservations }) {
         setSubmitting(true);
         try {
             const token = await getAccessTokenSilently();
-            // Admins and teachers' reservations are approved directly (UI only: the API must enforce this too)
-            const payload = toCreatePayload({ details, materiel, user, autoApprove: canManageReservations(user) });
+            const payload = toCreatePayload({ details, materiel, user, autoApprove });
             await ReservationDataService.create(payload, token);
-            history.push('/Reservation');
+            // The calendar shows this message once it's back
+            history.push('/Reservation', {
+                flash: autoApprove ? 'Réservation enregistrée et confirmée.' : 'Réservation envoyée pour validation.',
+            });
         } catch (error) {
             console.error('Could not create reservation', error);
             alert("La réservation n'a pas pu être enregistrée. Réessayez.");
@@ -118,50 +132,88 @@ function AddReservation({ allReservations }) {
 
     // ---------- Render ----------
 
-    return (
-        <div>
-            <Stepper activeStep={step} alternativeLabel style={{ padding: isMobile ? '16px 0' : 24 }}>
-                {(isMobile ? STEP_LABELS.short : STEP_LABELS.long).map((label) => (
-                    <Step key={label}><StepLabel>{label}</StepLabel></Step>
-                ))}
-            </Stepper>
+    // Live recap shown in the middle of the action bar
+    const actionInfo = () => {
+        const items = materiel.reduce((sum, line) => sum + line.quantite, 0);
+        if (step === STEP.DETAILS) {
+            return isPeriodChosen
+                ? <><b>{totals.days} jour{totals.days > 1 ? 's' : ''}</b>{!isMobile && <> · {common.convertDateToFrShort(details.from)} → {common.convertDateToFrShort(details.to)}</>}</>
+                : <span className="text-muted">Choisissez une période</span>;
+        }
+        if (step === STEP.MATERIEL) {
+            return items > 0
+                ? <><b>{items} article{items > 1 ? 's' : ''}</b> · {common.formatCHF(totals.perDay)}/jour</>
+                : <span className="text-muted">Ajoutez au moins un article</span>;
+        }
+        return <>Total <b>{common.formatCHF(totals.total)}</b></>;
+    };
 
-            <Box display="flex" pt={1} pb={2}>
-                <Button color="inherit" variant="outlined" onClick={goBack} disabled={submitting}>
-                    {step === STEP.DETAILS ? 'Annuler' : 'Retour'}
-                </Button>
-                <Box flex="1 1 auto" />
-                {step !== STEP.SUMMARY && (
-                    <Button color="primary" variant="contained" onClick={goNext} disabled={!canGoNext}>
-                        Suivant
-                    </Button>
-                )}
-            </Box>
+    return (
+        <div className="wizard">
+            <header className="wizard-header">
+                <h1 className="wizard-title">Nouvelle réservation</h1>
+                {!isMobile && <p className="wizard-subtitle">Réservez du matériel en trois étapes.</p>}
+                <Stepper activeStep={step} alternativeLabel>
+                    {(isMobile ? STEP_LABELS.short : STEP_LABELS.long).map((label) => (
+                        <Step key={label}><StepLabel>{label}</StepLabel></Step>
+                    ))}
+                </Stepper>
+
+            </header>
 
             {step === STEP.DETAILS && (
-                <ReservationDetailsForm details={details} onChange={updateDetail} errors={errors} showErrors={showErrors} />
+                <ReservationDetailsForm details={details} onChange={updateDetail} errors={errors}
+                    showErrors={showErrors} userEmail={user.email} />
             )}
 
             {step === STEP.MATERIEL && (
-                <ListMaterieleReservation
-                    materiel={materiel}
-                    setMateriel={setMateriel}
-                    materielReserve={reservedByOthers}
-                    allMateriele={catalog}
-                    setAllMateriele={setCatalog}
-                />
+                <>
+                    <ReservationRecap details={details} days={totals.days} />
+                    <SelectionChips materiel={materiel}
+                        onRemoveItem={(id) => setMateriel((selection) => selection.filter((line) => line.id !== id))} />
+                    <ListMaterieleReservation
+                        materiel={materiel}
+                        setMateriel={setMateriel}
+                        materielReserve={reservedByOthers}
+                        allMateriele={catalog}
+                        setAllMateriele={setCatalog}
+                        bottomGap={ACTION_BAR_HEIGHT}
+                    />
+                </>
             )}
 
             {step === STEP.SUMMARY && (
-                <ReservationSummary
-                    details={details}
-                    materiel={materiel}
-                    creatorEmail={user.email}
-                    totals={totals}
-                    submitting={submitting}
-                    onSubmit={submit}
-                />
+                <>
+                    <ReservationRecap details={details} days={totals.days} />
+                    <ReservationSummary
+                        details={details}
+                        materiel={materiel}
+                        creatorEmail={user.email}
+                        totals={totals}
+                        autoApproved={autoApprove}
+                    />
+                </>
             )}
+
+            {/* Sticky action bar: always reachable, with a live recap in the middle */}
+            <div className="wizard-actions">
+                <Button color="inherit" variant="outlined" onClick={goBack} disabled={submitting}
+                    startIcon={step === STEP.DETAILS ? null : <ArrowBackIcon />}>
+                    {step === STEP.DETAILS ? 'Annuler' : 'Retour'}
+                </Button>
+                <div className="wizard-actions-info">{actionInfo()}</div>
+                {step === STEP.SUMMARY ? (
+                    <Button color="primary" variant="contained" onClick={submit} disabled={submitting}
+                        startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <CheckIcon />}>
+                        {submitting ? 'Enregistrement…' : isMobile ? 'Confirmer' : 'Confirmer la réservation'}
+                    </Button>
+                ) : (
+                    <Button color="primary" variant="contained" onClick={goNext} disabled={!canGoNext}
+                        endIcon={<ArrowForwardIcon />}>
+                        Suivant
+                    </Button>
+                )}
+            </div>
         </div>
     );
 }
