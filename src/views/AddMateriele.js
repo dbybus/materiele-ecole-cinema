@@ -2,7 +2,7 @@ import React, {useState} from 'react'
 import {Form, Button, Row, Col, Container} from 'react-bootstrap'
 import DatePicker from 'react-datepicker'
 import MaterieleDataService from "../services/materiele.service";
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from '../auth';
 const common = require( "../common")
 
 const AddMateriele = (props) => {

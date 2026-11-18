@@ -19,7 +19,7 @@ import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import { ListGroup } from "react-bootstrap";
 import { FcApproval, FcDisclaimer } from "react-icons/fc";
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from '../auth';
 
 const common = require('../common');
 

@@ -3,7 +3,7 @@ import ListMateriele from './views/ListMateriele';
 import AddMateriele from './views/AddMateriele';
 import Reservation from './views/Reservation';
 import Loading from './components/loading';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from './auth';
 import NavBar from './components/NavBar';
 import Profile from "./views/Profile"
 import ListUsers from "./views/ListUsers"

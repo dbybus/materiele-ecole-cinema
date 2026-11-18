@@ -3,7 +3,7 @@ import Badge from "@material-ui/core/Badge";
 import { FaBell } from 'react-icons/fa'
 import ProfileMenu from './ProfileMenu';
 import {Nav, Navbar, Container} from 'react-bootstrap'
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from '../auth';
 import TokenService from '../services/token.service'
 import ReservationDataService from '../services/reservation.service'
 
@@ -37,7 +37,6 @@ function NavBar(){
             console.log(e);
           });
       })
-      //console.log(localStorage.getItem("nonApprovedReservations"))
     }
     
   }, [user]);

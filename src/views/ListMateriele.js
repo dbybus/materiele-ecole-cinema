@@ -19,7 +19,7 @@ import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import AddMateriele from './AddMateriele';
 import ModalPopup from '../components/ModalPopup';
-import {useAuth0} from "@auth0/auth0-react";
+import {useAuth0} from '../auth';
 import {Select, MenuItem} from '@material-ui/core';
 import {Button} from '@material-ui/core';
 import ModalImage from "react-modal-image";

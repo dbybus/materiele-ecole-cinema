@@ -12,7 +12,7 @@ import {
 } from '@syncfusion/ej2-react-schedule';
 import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 import { L10n } from '@syncfusion/ej2-base';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from '../auth';
 import { DialogComponent } from '@syncfusion/ej2-react-popups';
 import ListMaterieleReservationModify from "./ListMaterieleReservationModify";
 

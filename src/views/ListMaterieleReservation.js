@@ -20,7 +20,7 @@ import {Container} from 'react-bootstrap'
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import Loading from '../components/loading';
 import {Select, MenuItem} from '@material-ui/core'
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from '../auth';
 import ModalImage from "react-modal-image";
 
 function ListMaterieleReservation(props) {

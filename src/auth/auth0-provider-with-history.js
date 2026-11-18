@@ -1,9 +1,13 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
+import { AUTH_DISABLED } from './index';
 
 function Auth0ProviderWithHistory(props){
     const {children} = props;
+    if (AUTH_DISABLED) {
+        return <>{children}</>;
+    }
     const domain = process.env.REACT_APP_AUTH0_DOMAIN;
     const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID;
     const audience = process.env.REACT_APP_AUTH0_AUDIENCE;

@@ -19,7 +19,7 @@ import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap'
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import Loading from '../components/loading';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from '../auth';
 import ModalImage from "react-modal-image";
 
 const common = require('../common');

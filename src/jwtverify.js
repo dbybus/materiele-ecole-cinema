@@ -1,8 +1,15 @@
-const JWT = require('jsonwebtoken');
+// Loaded lazily: jsonwebtoken@8 (via buffer-equal-constant-time) crashes at load time on
+// Node >= 25 (SlowBuffer removed), and it isn't needed when auth is disabled.
+const getJWT = () => require('jsonwebtoken');
 
 let verifyToken = (token, req, res) => {
+  // Local dev without Auth0: grant full permissions, skip JWT verification
+  if (process.env.REACT_APP_AUTH_DISABLED === 'true') {
+    req.payload = { permissions: ['write:materiels'] };
+    return;
+  }
   if(token){
-    JWT.verify(token, process.env.REACT_APP_AUTH0_SECRET.replace(/\\n/gm, '\n'), { algorithms: ['RS256'] }, (err, payload) =>{
+    getJWT().verify(token, process.env.REACT_APP_AUTH0_SECRET.replace(/\\n/gm, '\n'), { algorithms: ['RS256'] }, (err, payload) =>{
       if(err){
         isValid = false;
         res.status(401).send({
@@ -33,7 +40,7 @@ let  signRefreshToken = () => {
       audience: process.env.REACT_APP_AUTH0_AUDIENCE,
     }
     
-    JWT.sign(payload, secret, options, (err, token) => {
+    getJWT().sign(payload, secret, options, (err, token) => {
       if (err) {
         console.log(err.message)
         reject(err)

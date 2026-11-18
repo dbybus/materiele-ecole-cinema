@@ -4,7 +4,7 @@ import TokenService from '../src/services/token.service';
 const axiosApiInstance =  axios.create(
 { 
   //baseURL: "https://localhost:3001/api",
-  baseURL: "https://192.168.176.35:3001/api",
+  baseURL: process.env.REACT_APP_API_URL || "https://192.168.1.5:3006/api",
   headers: {
     'Content-type': 'application/json',
     'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE',

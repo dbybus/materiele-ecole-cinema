@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react'
 import {Form, Row, Col, Container, ListGroup} from 'react-bootstrap'
 import ListMaterieleReservation from "./ListMaterieleReservation";
 import DatePickerReserv from "../components/DatePickerReserv";
-import {useAuth0} from "@auth0/auth0-react"
+import {useAuth0} from '../auth'
 import ReservationDataService from "../services/reservation.service"
 import { useHistory } from 'react-router';
 import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'

@@ -17,7 +17,7 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import {Container} from 'react-bootstrap';
-import {useAuth0} from "@auth0/auth0-react"
+import {useAuth0} from '../auth'
 import TokenDataService from "../services/token.service"
 
 

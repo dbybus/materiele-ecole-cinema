@@ -11,7 +11,7 @@ const app = express();
 global.__basedir = __dirname;
 
 var corsOptions = {
-  origin: 'https://192.168.1.5:3001/',
+  origin: 'https://192.168.1.5:3002/',
   //origin: "http://localhost:3000"
 };
 
@@ -46,16 +46,22 @@ require("./server/routes/user.routes")(app);
 require("./server/routes/materiele.routes")(app);
 require("./server/routes/reservation.routes")(app);
 
-const privateKey = fs.readFileSync("./.cert/key.pem", "utf8");
-const certificate = fs.readFileSync("./.cert/cert.pem", "utf8");
-const credentials = { key: privateKey, cert: certificate };
-const httpsServer = https.createServer(credentials, app);
 // set port, listen for requests
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3006;
 
-httpsServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
+// Use HTTPS when certificates are present, otherwise fall back to plain HTTP (local dev)
+if (fs.existsSync("./.cert/key.pem") && fs.existsSync("./.cert/cert.pem")) {
+  const privateKey = fs.readFileSync("./.cert/key.pem", "utf8");
+  const certificate = fs.readFileSync("./.cert/cert.pem", "utf8");
+  const credentials = { key: privateKey, cert: certificate };
+  https.createServer(credentials, app).listen(PORT, () => {
+    console.log(`HTTPS server is running on port ${PORT}.`);
+  });
+} else {
+  app.listen(PORT, () => {
+    console.log(`No .cert found - HTTP server is running on port ${PORT}.`);
+  });
+}
 
 
 
