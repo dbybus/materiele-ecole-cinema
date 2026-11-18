@@ -1,169 +1,107 @@
-import { useEffect, useState, forwardRef } from 'react'
-import MaterieleDataService from "../services/materiele.service";
-import MaterialTable from 'material-table'
-import AddBox from '@material-ui/icons/AddBox';
-import ArrowDownward from '@material-ui/icons/ArrowDownward';
-import Check from '@material-ui/icons/Check';
-import ChevronLeft from '@material-ui/icons/ChevronLeft';
-import ChevronRight from '@material-ui/icons/ChevronRight';
-import Clear from '@material-ui/icons/Clear';
-import DeleteOutline from '@material-ui/icons/DeleteOutline';
-import Edit from '@material-ui/icons/Edit';
-import FilterList from '@material-ui/icons/FilterList';
-import FirstPage from '@material-ui/icons/FirstPage';
-import LastPage from '@material-ui/icons/LastPage';
-import Remove from '@material-ui/icons/Remove';
-import SaveAlt from '@material-ui/icons/SaveAlt';
-import Search from '@material-ui/icons/Search';
-import ViewColumn from '@material-ui/icons/ViewColumn';
-import {Container} from 'react-bootstrap'
-import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
-import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import MaterialTable from 'material-table';
+import { Container } from 'react-bootstrap';
+import { IconButton } from '@material-ui/core';
+import AddIcon from '@material-ui/icons/Add';
+import RemoveIcon from '@material-ui/icons/Remove';
+import ModalImage from 'react-modal-image';
+import MaterieleDataService from '../services/materiele.service';
 import Loading from '../components/loading';
-import {Select, MenuItem} from '@material-ui/core'
-import { useAuth0 } from '../auth';
-import ModalImage from "react-modal-image";
 import MaterielPickerCards from '../components/MaterielPickerCards';
+import FilterSelect from '../components/materiel/FilterSelect';
+import { tableIcons, localizationFr, chfCurrencySetting } from '../components/table/materialTableConfig';
+import {
+  ALL, addToSelection, buildPickerRows, labelFor, matchesFilters, removeFromSelection,
+} from '../components/materiel/materielUtils';
+import { CATEGORIES, LIEUX } from '../constants/materiel';
+import { useAuth0 } from '../auth';
+import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
+import useFitPageSize from '../hooks/useFitPageSize';
 
-function ListMaterieleReservation(props) {
+const common = require('../common');
+
+/** − qty + control used in the table's first column. */
+function QuantityStepper({ row, onAdd, onRemove }) {
+  return (
+    <div className="picker-stepper" style={{ display: 'inline-flex' }}>
+      <IconButton size="small" onClick={() => onRemove(row)} disabled={row.tempMateriel === 0} aria-label="Retirer">
+        <RemoveIcon fontSize="small" />
+      </IconButton>
+      <span className="picker-qty">{row.tempMateriel}</span>
+      <IconButton size="small" color="primary" onClick={() => onAdd(row)} disabled={row.quantiteDisp === 0}
+        aria-label="Ajouter" title={row.quantiteDisp === 0 ? 'Plus disponible pour ces dates' : 'Ajouter'}>
+        <AddIcon fontSize="small" />
+      </IconButton>
+    </div>
+  );
+}
+
+/**
+ * Step 2 of the reservation wizard: choose equipment and quantities.
+ *
+ * Props (owned by AddReservation):
+ *  - materiel / setMateriel:   the selection [{ id, ref, label, tarifLoc, quantite }]
+ *  - materielReserve:          quantities already reserved by others on the chosen dates [{ id, quantite }]
+ *  - allMateriele / setAllMateriele: catalog cache, so going back and forth between steps doesn't refetch
+ */
+function ListMaterieleReservation({ materiel, setMateriel, materielReserve, allMateriele, setAllMateriele }) {
   const isMobile = useIsMobile();
   const isCompact = useIsCompact();
+  const { getAccessTokenSilently } = useAuth0();
 
-  const { materiel, setMateriel, materielReserve, visitedStep2, allMateriele, setAllMateriele} = props;
-  const [loading, setLoading] = useState(true);
-  const [filterCategorie, setFilterCategorie] = useState("all");
-  const [filterLieu, setFilterLieu] = useState("all");
-  const {getAccessTokenSilently} = useAuth0()
-  const tableIcons = {
-    Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
-    Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
-    Clear: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Delete: forwardRef((props, ref) => <DeleteOutline {...props} ref={ref} />),
-    DetailPanel: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-    Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
-    Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
-    Filter: forwardRef((props, ref) => <FilterList {...props} ref={ref} />),
-    FirstPage: forwardRef((props, ref) => <FirstPage {...props} ref={ref} />),
-    LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
-    NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-    PreviousPage: forwardRef((props, ref) => <ChevronLeft {...props} ref={ref} />),
-    ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
-    SortArrow: forwardRef((props, ref) => <ArrowDownward {...props} ref={ref} />),
-    ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
-    ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
-  };
-  
-  //console.log("Materiel encore reserve", materielReserve)
-  const getAllMateriele = async () => {
-    
-    getAccessTokenSilently().then(async (token) => {
-      const response = await MaterieleDataService.getAll(token);
-      let newArray = [...response.data];
-      
-      newArray.map((element, index) => {  
-        //Add temporary attribute quantite disponible
-        newArray[index].quantiteDisp = element.Qtotale;
-        newArray[index].tempMateriel = 0;
-        newArray[index].prixTotal = 0;
+  const [loading, setLoading] = useState(allMateriele.length === 0);
+  const [filters, setFilters] = useState({ categorie: ALL, lieu: ALL });
 
-        //Verify if material is reserved and which quantity 
-        const materielTemp = materielReserve.find(item => item.id === element.id);
-        
-        if (materielTemp != undefined) {
-          newArray[index].quantiteDisp = element.Qtotale - materielTemp.quantite;
-        }
-      })
+  // ---------- Data ----------
 
-      setAllMateriele(filterCategorie === 'all' && filterLieu === 'all'? newArray : newArray.filter(item => (item.categorie === filterCategorie && filterLieu === 'all') || (item.lieu === filterLieu &&  filterCategorie === 'all') || (item.categorie === filterCategorie && item.lieu === filterLieu)));
-    })
-  };
-
-  useEffect(() =>{
-    if(!visitedStep2){
-      getAllMateriele().finally(() => {
-        setLoading(false);
-      });
-    }else{
+  const loadCatalog = useCallback(async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const { data } = await MaterieleDataService.getAll(token);
+      setAllMateriele(data);
+    } catch (error) {
+      console.error('Could not load materials', error);
+    } finally {
       setLoading(false);
     }
+  }, [getAccessTokenSilently, setAllMateriele]);
 
-  },[loading, filterCategorie, filterLieu])
+  // Fetch once; the cached catalog is reused when coming back to this step
+  useEffect(() => {
+    if (allMateriele.length === 0) loadCatalog();
+  }, [allMateriele.length, loadCatalog]);
 
-  // Add one unit of a material to the reservation (used by the table and the mobile cards)
+  // Availability, selected count and line total are derived, never stored on the rows
+  const rows = useMemo(
+    () => buildPickerRows(allMateriele, materielReserve, materiel).filter((m) => matchesFilters(m, filters)),
+    [allMateriele, materielReserve, materiel, filters]
+  );
+
+  // ---------- Selection ----------
+
   const addOne = (row) => {
-    const dataUpdate = [...allMateriele];
-    const index = dataUpdate.findIndex(item => item.id === row.id);
-    if (index === -1 || dataUpdate[index].quantiteDisp === 0) return;
-
-    dataUpdate[index].quantiteDisp -= 1;
-    dataUpdate[index].tempMateriel += 1;
-    dataUpdate[index].prixTotal += dataUpdate[index].tarifLoc;
-    setAllMateriele(dataUpdate);
-
-    const temp = materiel.find(item => item.id === row.id);
-    if (temp !== undefined) {
-      temp.quantite += 1;
-    } else {
-      setMateriel(oldArray => [...oldArray, {
-        id: row.id,
-        ref: row.ref,
-        quantite: 1,
-        label: row.label,
-        tarifLoc: row.tarifLoc
-      }]);
-    }
+    if (row.quantiteDisp > 0) setMateriel((selection) => addToSelection(selection, row));
   };
+  const removeOne = (row) => setMateriel((selection) => removeFromSelection(selection, row.id));
 
-  // Remove one unit of a material from the reservation
-  const removeOne = (row) => {
-    const dataUpdate = [...allMateriele];
-    const index = dataUpdate.findIndex(item => item.id === row.id);
-    if (index === -1 || dataUpdate[index].tempMateriel === 0) return;
+  const selectedCount = materiel.reduce((sum, line) => sum + line.quantite, 0);
+  const perDay = common.calcTotalPrice(materiel);
 
-    dataUpdate[index].quantiteDisp += 1;
-    dataUpdate[index].tempMateriel -= 1;
-    dataUpdate[index].prixTotal -= dataUpdate[index].tarifLoc;
-    setAllMateriele(dataUpdate);
+  // ---------- Table setup ----------
 
-    const temp = materiel.find(item => item.id === row.id);
-    if (temp !== undefined) {
-      temp.quantite -= 1;
-      if (temp.quantite === 0) {
-        // Quantity 0: remove the material from the reservation
-        setMateriel(oldArray => oldArray.filter(item => item.id !== row.id));
-      }
-    }
+  const { containerRef, tableRef, pageSize, pageSizeOptions, onChangeRowsPerPage } =
+    useFitPageSize({ data: rows, fallbackRowHeight: 64 });
+
+  const filterControls = {
+    categorie: (
+      <FilterSelect value={filters.categorie} options={CATEGORIES} allLabel="Toutes catégories"
+        onChange={(categorie) => setFilters((f) => ({ ...f, categorie }))} />
+    ),
+    lieu: (
+      <FilterSelect value={filters.lieu} options={LIEUX} allLabel="Tous les lieux"
+        onChange={(lieu) => setFilters((f) => ({ ...f, lieu }))} />
+    ),
   };
-
-  const categorieSelect = (
-    <Select
-      style={{minWidth: 100}}
-      value={filterCategorie}
-      onChange={(e)=>setFilterCategorie(e.target.value)}
-    >
-      <MenuItem value={"all"}><em>Catégorie</em></MenuItem>
-      <MenuItem value={"image"}>Image</MenuItem>
-      <MenuItem value={"lumiere"}>Lumière</MenuItem>
-      <MenuItem value={"son"}>Son</MenuItem>
-      <MenuItem value={"moniteur"}>Moniteur</MenuItem>
-      <MenuItem value={"trepieds"}>Trepieds</MenuItem>
-      <MenuItem value={"machinerie"}>Machinerie</MenuItem>
-      <MenuItem value={"autres"}>Autres</MenuItem>
-    </Select>
-  );
-
-  const lieuSelect = (
-    <Select
-      style={{minWidth: 100}}
-      value={filterLieu}
-      onChange={(e)=>setFilterLieu(e.target.value)}
-    >
-      <MenuItem value={"all"}><em>Lieu</em></MenuItem>
-      <MenuItem value={"Geneve"}>Genève</MenuItem>
-      <MenuItem value={"Lausanne"}>Lausanne</MenuItem>
-    </Select>
-  );
 
   if (loading) {
     return <Container className="d-flex justify-content-center align-items-center"><Loading /></Container>;
@@ -174,66 +112,70 @@ function ListMaterieleReservation(props) {
     return (
       <MaterielPickerCards
         title="Liste du matériel"
-        items={allMateriele}
+        items={rows}
+        selection={materiel}
         onAdd={addOne}
         onRemove={removeOne}
-        filters={<>{categorieSelect}{lieuSelect}</>}
+        filters={<>{filterControls.categorie}{filterControls.lieu}</>}
       />
     );
   }
 
+  const nameWidth = isCompact ? 160 : 220;
+  const columns = [
+    {
+      title: 'Quantité', field: 'tempMateriel', width: 150, sorting: false, searchable: false,
+      render: (row) => <QuantityStepper row={row} onAdd={addOne} onRemove={removeOne} />,
+    },
+    { title: 'Nom', field: 'label', cellStyle: { minWidth: nameWidth }, headerStyle: { minWidth: nameWidth } },
+    {
+      title: 'Image', field: 'url_pic', width: 90, sorting: false, searchable: false,
+      render: (row) => row.url_pic
+        ? <ModalImage className="mat-thumb mat-thumb--sm" small={row.url_pic} large={row.url_pic} alt={row.label} />
+        : null,
+    },
+    { title: 'Catégorie', field: 'categorie', width: 130, render: (row) => labelFor(CATEGORIES, row.categorie) },
+    {
+      title: 'Disponible', field: 'quantiteDisp', type: 'numeric', width: 110,
+      cellStyle: (value) => ({ color: value === 0 ? '#c62828' : undefined, fontWeight: value === 0 ? 600 : undefined }),
+    },
+    { title: 'Stock', field: 'Qtotale', type: 'numeric', width: 90, hidden: isCompact },
+    { title: 'Tarif / jour', field: 'tarifLoc', type: 'currency', currencySetting: chfCurrencySetting, width: 120 },
+    { title: 'Lieu', field: 'lieu', width: 110, hidden: isCompact, render: (row) => labelFor(LIEUX, row.lieu) },
+    { title: 'Total / jour', field: 'prixTotal', type: 'currency', currencySetting: chfCurrencySetting, width: 120 },
+  ];
+
+  const title = selectedCount > 0
+    ? `Liste du matériel — ${selectedCount} article${selectedCount > 1 ? 's' : ''}, ${common.formatCHF(perDay)}/jour`
+    : 'Liste du matériel';
+
   return (
-    <Container className="table-view">
-    <MaterialTable 
-      icons={tableIcons}
-      options = {{
-        rowStyle: (index) => index%2 == 0 ? {background:"#f5f5f5"} : null,
-        pageSize:20,
-        pageSizeOptions:[20,40, 60]  
-      }}
-      columns={[
-        { title: 'Nom', field: 'label', cellStyle: { minWidth: 160 }, headerStyle: { minWidth: 160 }, editable: 'never' },
-        { title: 'Image', field: 'image', render: item => <ModalImage className="mat-thumb" small={item.url_pic} large={item.url_pic} alt={item.label} />, editable: 'never'},
-        { title: 'Category', field: 'categorie', editable: 'never'},
-        { title: 'Disponible', field: 'quantiteDisp', type: 'numeric'},
-        { title: 'Quantite', field: 'Qtotale', hidden: isCompact, type: 'numeric'},
-        { title: 'Tarif', field: 'tarifLoc', editable: 'never', type: 'currency', currencySetting:{ locale: 'fr-CH',currencyCode:'CHF', minimumFractionDigits:0, maximumFractionDigits:2}},
-        { title: 'Lieu', field: 'lieu', hidden: isCompact, editable: 'never'},
-        { title: 'Total', field: 'prixTotal', editable: 'never', type: 'currency', currencySetting:{ locale: 'fr-CH',currencyCode:'CHF', minimumFractionDigits:0, maximumFractionDigits:2}}
-      ]}
-      data={allMateriele}
-      actions={[
-        {
-          icon: () => categorieSelect,
-          tooltip: 'Choisir la catégorie',
-          isFreeAction: true,
-        },
-        {
-          icon: () => lieuSelect,
-          tooltip: 'Choisir l\'emplacement',
-          isFreeAction: true,
-        },
-        rowData => ({
-          icon: () => <AddBox style={{color: rowData.quantiteDisp != 0 ? 'blue' : 'red'}}/>,
-          tooltip: rowData.quantiteDisp === 0 ? 'Quantite disponible 0' : 'Ajouter matériel à la reservation',
-          disabled: rowData.quantiteDisp === 0,
-          onClick: () => addOne(rowData)
-        }),
-        rowData => ({
-          icon: () => <span><h5>{rowData.tempMateriel}</h5></span>,
-          disabled: true,
-        }),
-        rowData => ({
-          icon: () => <IndeterminateCheckBoxIcon style={{color: rowData.tempMateriel != 0 ? 'blue' : 'red'}}/>,
-          disabled: rowData.tempMateriel !== 0 ? false : true,
-          tooltip: rowData.tempMateriel !== 0 ? ' Retirer matériel de la réservation' : 'Quantité maximale déjà réservée',
-          onClick: () => removeOne(rowData)
-        })
-      ]}
-    title="Liste du matériél"
-    />
-  </Container>
-  )
+    <Container className="table-view" ref={containerRef}>
+      <MaterialTable
+        title={title}
+        tableRef={tableRef}
+        icons={tableIcons}
+        localization={localizationFr}
+        columns={columns}
+        data={rows}
+        onChangeRowsPerPage={onChangeRowsPerPage}
+        actions={[
+          { icon: () => filterControls.categorie, tooltip: 'Filtrer par catégorie', isFreeAction: true },
+          { icon: () => filterControls.lieu, tooltip: 'Filtrer par lieu', isFreeAction: true },
+        ]}
+        options={{
+          padding: 'dense',
+          pageSize,
+          pageSizeOptions,
+          emptyRowsWhenPaging: false,
+          // Selected lines stand out; the others keep the zebra striping
+          rowStyle: (row, index) => (row.tempMateriel > 0
+            ? { background: '#f4f5fd' }
+            : index % 2 === 0 ? { background: '#f5f5f5' } : null),
+        }}
+      />
+    </Container>
+  );
 }
 
-export default ListMaterieleReservation
+export default ListMaterieleReservation;

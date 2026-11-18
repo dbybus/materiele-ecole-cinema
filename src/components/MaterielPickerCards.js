@@ -18,8 +18,10 @@ const chf = (value) =>
  *  - onAdd / onRemove: called with the row, same handlers the table actions use
  *  - filters:  optional extra controls (category / location selects) rendered under the search box
  *  - title:    list heading
+ *  - selection: optional full selection [{ quantite, tarifLoc }] for the summary bar. Pass it when `items`
+ *              is filtered, otherwise selected items hidden by a filter would be missing from the total.
  */
-export default function MaterielPickerCards({ items, onAdd, onRemove, filters, title }) {
+export default function MaterielPickerCards({ items, onAdd, onRemove, filters, title, selection }) {
   const [search, setSearch] = useState('');
   const [visible, setVisible] = useState(PAGE_SIZE);
 
@@ -31,8 +33,11 @@ export default function MaterielPickerCards({ items, onAdd, onRemove, filters, t
     );
   }, [items, search]);
 
-  const selectedCount = items.reduce((sum, item) => sum + (item.tempMateriel > 0 ? item.tempMateriel : 0), 0);
-  const selectedTotal = items.reduce((sum, item) => sum + (item.tempMateriel > 0 ? item.tempMateriel * item.tarifLoc : 0), 0);
+  const summaryLines = selection
+    ? selection.map((line) => ({ quantite: line.quantite, tarifLoc: line.tarifLoc }))
+    : items.map((item) => ({ quantite: item.tempMateriel > 0 ? item.tempMateriel : 0, tarifLoc: item.tarifLoc }));
+  const selectedCount = summaryLines.reduce((sum, line) => sum + line.quantite, 0);
+  const selectedTotal = summaryLines.reduce((sum, line) => sum + line.quantite * line.tarifLoc, 0);
 
   return (
     <div className="picker">

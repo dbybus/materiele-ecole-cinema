@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import MaterialTable from 'material-table';
 import { Container } from 'react-bootstrap';
-import { MenuItem, Select } from '@material-ui/core';
 import AddBox from '@material-ui/icons/AddBox';
 import ModalImage from 'react-modal-image';
 import MaterieleDataService from '../services/materiele.service';
@@ -9,6 +8,7 @@ import AddMateriele from './AddMateriele';
 import ModalPopup from '../components/ModalPopup';
 import { tableIcons, localizationFr, chfCurrencySetting } from '../components/table/materialTableConfig';
 import { ImageEditor, SelectEditor } from '../components/materiel/MaterielEditors';
+import FilterSelect from '../components/materiel/FilterSelect';
 import { ALL, labelFor, matchesFilters, toMaterielPayload } from '../components/materiel/materielUtils';
 import { CATEGORIES, DEGRES, LIEUX } from '../constants/materiel';
 import { useAuth0 } from '../auth';
@@ -27,16 +27,6 @@ const localization = {
     },
   },
 };
-
-/** Filter dropdown shown in the table toolbar. */
-function FilterSelect({ value, onChange, options, allLabel }) {
-  return (
-    <Select value={value} onChange={(e) => onChange(e.target.value)} style={{ minWidth: 130 }}>
-      <MenuItem value={ALL}><em>{allLabel}</em></MenuItem>
-      {options.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
-    </Select>
-  );
-}
 
 function ListMateriele() {
   const isMobile = useIsMobile();
