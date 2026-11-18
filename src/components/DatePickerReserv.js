@@ -1,87 +1,75 @@
-import React, { useState } from 'react';
-import Helmet from 'react-helmet';
-import DayPicker, { DateUtils } from 'react-day-picker';
+import React from 'react';
+import DayPicker from 'react-day-picker';
 import 'react-day-picker/lib/style.css';
 import useIsMobile from '../hooks/useIsMobile';
 
-export default function DatePickerReserv(props) {
-  const {from, setStartDate, to, setEndDate} = props;
-  const isMobile = useIsMobile();
-  /* const [from, setStartDate] = useState(null);
-  const [to, setEndDate] = useState(null);
+const common = require('../common');
+
+// A reservation can span at most this many days after the first one (11 days in total)
+export const MAX_EXTRA_DAYS = 10;
+
+// French labels for react-day-picker (it has no built-in locales)
+const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+const WEEKDAYS_LONG = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+const WEEKDAYS_SHORT = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
+
+const startOfDay = (date) => { const d = new Date(date); d.setHours(0, 0, 0, 0); return d; };
+const addDays = (date, days) => { const d = new Date(date); d.setDate(d.getDate() + days); return d; };
+
+/**
+ * Range picker for the reservation period.
+ * 1st click: first day. 2nd click: last day (up to MAX_EXTRA_DAYS later; an earlier day restarts).
+ * Clicking again once both are set starts a new range. Past days can't be chosen.
  */
-  function handleDayClick(day) {   
-    const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-    const diffDays = Math.round(Math.abs((day - from) / oneDay));
-    const range = DateUtils.addDayToRange(day, undefined);
-    
-    if(diffDays <= 10){
-      const range = DateUtils.addDayToRange(day, {from: from, to: to});
-      setStartDate(range.from);
-      setEndDate(range.to)
-    }
-    else {
-      setStartDate(range.from);
-      setEndDate(range.to)
-    }
-    
-  }
+export default function DatePickerReserv({ from, setStartDate, to, setEndDate }) {
+  const isMobile = useIsMobile();
+  const today = startOfDay(new Date());
+  const maxEnd = from ? addDays(from, MAX_EXTRA_DAYS) : null;
 
-  function handleResetClick() {
-    setStartDate(null);
-    setEndDate(null)
-  }
+  const startRange = (day) => { setStartDate(day); setEndDate(null); };
 
-  const modifiers = { start: from, end: to };
-  
-  function addDays(date, days) {
-    var result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }
+  const handleDayClick = (day, modifiers = {}) => {
+    if (modifiers.disabled) return; // react-day-picker v7 still calls onDayClick for disabled days
+    if (!from || to || day < startOfDay(from)) {
+      startRange(day);
+    } else {
+      setEndDate(day);
+    }
+  };
+
+  const reset = () => { setStartDate(null); setEndDate(null); };
+
+  // While choosing the last day, only the allowed window stays clickable
+  const disabledDays = from && !to ? [{ before: today }, { after: maxEnd }] : [{ before: today }];
+
+  let message;
+  if (!from) message = 'Choisissez le premier jour.';
+  else if (!to) message = `Choisissez le dernier jour (au plus tard le ${common.convertDateToFr(maxEnd)}).`;
+  else message = `Du ${common.convertDateToFr(from)} au ${common.convertDateToFr(to)}`;
+
   return (
     <div className="RangeExample">
-      <p style={{color: !from || !to ? 'red' : null}}>
-        {!from && !to && 'Please select the first day.'}
-        {from && !to && 'Please select the last day.'}
-        {from &&
-          to &&
-          `Selected from ${from.toLocaleDateString()} to
-              ${to.toLocaleDateString()}`}{' '}
-        {from && to && (
-          <button className="link" onClick={handleResetClick}>
-            Reset
-          </button>
+      <p className={from && to ? 'mb-1' : 'mb-1 text-danger'}>
+        {message}{' '}
+        {from && (
+          <button type="button" className="btn btn-link btn-sm p-0 align-baseline" onClick={reset}>Effacer</button>
         )}
       </p>
       <DayPicker
         className="Selectable"
         numberOfMonths={isMobile ? 1 : 2}
+        fromMonth={today}
+        locale="fr"
+        months={MONTHS}
+        weekdaysLong={WEEKDAYS_LONG}
+        weekdaysShort={WEEKDAYS_SHORT}
+        firstDayOfWeek={1}
+        labels={{ nextMonth: 'Mois suivant', previousMonth: 'Mois précédent' }}
         selectedDays={[from, { from, to }]}
-        modifiers={modifiers}
+        modifiers={{ start: from, end: to }}
         onDayClick={handleDayClick}
-        disabledDays={{ before: from , after: addDays(from, 10)}}
+        disabledDays={disabledDays}
       />
-      <Helmet>
-        <style>{`
-          .Selectable .DayPicker-Day--selected:not(.DayPicker-Day--start):not(.DayPicker-Day--end):not(.DayPicker-Day--outside) {
-              background-color: #f0f8ff !important;
-              color: #4a90e2;
-          }
-          .Selectable .DayPicker-Day {
-              border-radius: 0 !important;
-          }
-          .Selectable .DayPicker-Day--start {
-              border-top-left-radius: 50% !important;
-              border-bottom-left-radius: 50% !important;
-          }
-          .Selectable .DayPicker-Day--end {
-              border-top-right-radius: 50% !important;
-              border-bottom-right-radius: 50% !important;
-          }
-        `}</style>
-      </Helmet>
     </div>
   );
-  
 }

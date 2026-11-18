@@ -1,292 +1,169 @@
-import React, {useState, useEffect} from 'react'
-import {Form, Row, Col, Container, ListGroup} from 'react-bootstrap'
-import ListMaterieleReservation from "./ListMaterieleReservation";
-import DatePickerReserv from "../components/DatePickerReserv";
-import {useAuth0} from '../auth'
-import ReservationDataService from "../services/reservation.service"
-import { useHistory } from 'react-router';
-import {Stepper, Step, StepLabel, Button, Box} from '@material-ui/core'
-import GeneratePdf from "../components/GeneratePdf"
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { Stepper, Step, StepLabel, Button, Box } from '@material-ui/core';
+import ListMaterieleReservation from './ListMaterieleReservation';
+import ReservationDetailsForm from '../components/reservation/ReservationDetailsForm';
+import ReservationSummary from '../components/reservation/ReservationSummary';
+import {
+    peakReservedQuantities, toCreatePayload, toReservationPeriod, totalsFor, validateDetails,
+} from '../components/reservation/reservationUtils';
+import ReservationDataService from '../services/reservation.service';
+import { useAuth0 } from '../auth';
+import { canManageReservations } from '../auth/roles';
 import useIsMobile from '../hooks/useIsMobile';
 
-const common = require('../common');
+const STEP = { DETAILS: 0, MATERIEL: 1, SUMMARY: 2 };
 
-const AddReservation = (props) => {
+const STEP_LABELS = {
+    short: ['Détails', 'Matériel', 'Récapitulatif'],
+    long: ['Sélectionner les détails de la réservation', 'Sélectionner des matériels', "Récapitulatif d'évènement"],
+};
 
-    const {allReservations} = props;
-    const {user, getAccessTokenSilently} = useAuth0();
-    const {sub, email} = user;
+const EMPTY_DETAILS = { titre: '', beneficiaire: '', lieu: '', from: null, to: null };
+
+const periodKey = ({ from, to }) => `${from ? from.getTime() : ''}-${to ? to.getTime() : ''}`;
+
+/**
+ * New reservation wizard: details -> equipment -> summary.
+ * `allReservations` is passed by the calendar page; when opened directly on /AddReservation it's loaded here.
+ * Leaving (cancel or after saving) navigates to /Reservation, which closes the wizard.
+ */
+function AddReservation({ allReservations }) {
+    const { user, getAccessTokenSilently } = useAuth0();
     const history = useHistory();
-    const [step, setStep] = useState(0);
-    const [reservationName, setReservationName] = useState("");
-    const [lieu, setLieu] = useState("");
-    const [from, setStartDate] = useState(null);
-    const [to, setEndDate] = useState(null);
-    const [materiel, setMateriel] = useState([]);
-    const [creatorId, setCreatorId] = useState("");
-    const [creatorEmail, setCreatorEmail] = useState("");
-    const [beneficiaire, setBeneficiaire] = useState("");
-    const [materielReserve, setMaterielReserve] = useState([]);
-    const [totalSum, setTotatSum] = useState(0);
-    const [totalSumWithDays, setTotalSumWithDays] = useState(0);
-    const [visitedStep2, setVisitedStep2] = useState(false);
-    const [allMateriele, setAllMateriele] = useState([]);
-    const [daysReservation, setDaysReservation] = useState(0)
-    const [validated, setValidated] = useState(false);
     const isMobile = useIsMobile();
-    const steps = isMobile
-        ? ['Détails', 'Matériel', 'Récapitulatif']
-        : ['Sélectionner les détails de la réservation', 'Sélectionner des matériels', 'Récapitulatif d\'évènement'];
-    const roleAdmin = user['https://example-api/role'].find(element => element === 'Admin');
-    const roleProf = user['https://example-api/role'].find(element => element === 'Prof');
-    
-    const nextStep = (event) =>{
 
-        if(reservationName === '' || lieu === '' || !emailValidation() || from === null || to === null){
-            event.preventDefault();
-            event.stopPropagation();
-        }else{
-            setStep(step + 1);
-        }
+    const [step, setStep] = useState(STEP.DETAILS);
+    const [details, setDetails] = useState(EMPTY_DETAILS);
+    const [showErrors, setShowErrors] = useState(false);
+    const [materiel, setMateriel] = useState([]);       // selection [{ id, ref, label, tarifLoc, quantite }]
+    const [catalog, setCatalog] = useState([]);         // equipment list cache, shared with step 2
+    const [loadedReservations, setLoadedReservations] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+    // Period the current selection was made for: the selection is only reset if the dates change
+    const selectionPeriodRef = useRef(null);
 
-        setValidated(true);
-    }
-
-    const previousStep = () => {
-        setStep(step - 1);
-    }
-
-    const emailValidation = () => {
-        const regex = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
-        if(!beneficiaire || regex.test(beneficiaire) === false){
-            return false;
-        }
-        return true;
-    }
-
+    // Opened directly on /AddReservation (no calendar page around it): load the reservations ourselves
     useEffect(() => {
-        //console.log("Step 1 data ", reservationName, lieu, from, to, materiel, creatorId, creatorEmail)
-        if(step === -1){
-            history.push('/Reservation');
-        }else if(step === 0){
-            setVisitedStep2(false);
-            setMateriel([]);
-        }else if(step === 1){
-            getReservedMaterials();
-        }else if(step === 2){
-            var difference_in_days = common.calcDays(from, to);
-            var total = common.calcTotalPrice(materiel);  
-            setTotatSum(total);
-            setTotalSumWithDays( total * difference_in_days);
-            setDaysReservation(difference_in_days);
-            setVisitedStep2(true);
+        if (allReservations) return;
+        (async () => {
+            try {
+                const token = await getAccessTokenSilently();
+                const { data } = await ReservationDataService.getAll(token);
+                setLoadedReservations(data);
+            } catch (error) {
+                console.error('Could not load reservations', error);
+                setLoadedReservations([]);
+            }
+        })();
+    }, [allReservations, getAccessTokenSilently]);
+
+    const reservations = allReservations || loadedReservations || [];
+    const errors = useMemo(() => validateDetails(details), [details]);
+    const isPeriodChosen = details.from && details.to;
+    const period = isPeriodChosen ? toReservationPeriod(details.from, details.to) : null;
+
+    // What other reservations already use during the chosen period (peak simultaneous use)
+    const reservedByOthers = useMemo(() => {
+        if (!details.from || !details.to) return [];
+        const { start, end } = toReservationPeriod(details.from, details.to);
+        return peakReservedQuantities(reservations, start, end);
+    }, [reservations, details.from, details.to]);
+    const totals = period ? totalsFor(period.start, period.end, materiel) : { days: 0, perDay: 0, total: 0 };
+
+    // ---------- Navigation ----------
+
+    const updateDetail = (field, value) => setDetails((d) => ({ ...d, [field]: value }));
+
+    const goNext = () => {
+        if (step === STEP.DETAILS) {
+            setShowErrors(true);
+            if (Object.keys(errors).length > 0) return;
+            // New dates mean different availability: start the selection over
+            if (selectionPeriodRef.current !== periodKey(details)) {
+                setMateriel([]);
+                selectionPeriodRef.current = periodKey(details);
+            }
         }
-    }, [step])
-
-    useEffect(() => {
-        setCreatorId(sub);
-        setCreatorEmail(email);
-        return () => {
-            setCreatorId([]);
-            setCreatorEmail([]);
-          };
-    }, [user]); 
-    
-    const getReservedMaterials = () => {
-        const findByDate = allReservations.filter(item => common.dateRangeOverlaps(from.setHours(14, 0, 0 ,0), to.setHours(13, 0, 0 ,0), new Date(item.date_start), new Date(item.date_end)));
-        let reservedMaterialList = [];
-        
-        Object.keys(findByDate).map((id) => {
-            findByDate[id].getReservation.forEach((element, index) => {
-                const materiel = element.getMateriel;
-
-                const temp = reservedMaterialList.find(item => item.id === materiel.id);
-
-                if (temp !== undefined) {
-                    temp.quantite += element.quantite;
-
-                    if(findByDate[(+id-1).toString()] !== undefined){
-                        //If current date doesnt overlap next reservation 
-                        if(!common.dateRangeOverlaps(findByDate[(+id-1).toString()].date_start, findByDate[(+id-1).toString()].date_end, findByDate[id].date_start, findByDate[id].date_end)){
-                            temp.quantite -= element.quantite;
-                        }  
-                    }
-                } else {
-                    reservedMaterialList.push({
-                        id: materiel.id,
-                        quantite: element.quantite
-                    })
-                }       
-            });
-        })
-
-        console.log("LIST SENT TO COMPONENT ", reservedMaterialList);
-        setMaterielReserve(reservedMaterialList);
+        setStep((s) => Math.min(s + 1, STEP.SUMMARY));
     };
 
-    const submitStep = () => {
-
-        console.log(creatorEmail)
-        let data = {
-            titre: reservationName,
-            lieu: lieu,
-            date_start: from.setHours(14, 0, 0 ,0),
-            date_end: to.setHours(13, 0, 0 ,0),
-            createur: creatorId,
-            creatorEmail: creatorEmail, 
-            beneficiaire: beneficiaire,
-            materiel: materiel,
-            isApproved: false
-        };
-        
-        //Automatically set approve true if role is Admin or Prof
-        if(roleAdmin !== undefined || roleProf !== undefined){
-            data.isApproved = true;
+    const goBack = () => {
+        if (step === STEP.DETAILS) {
+            history.push('/Reservation'); // leave the wizard
+        } else {
+            setStep((s) => s - 1);
         }
+    };
 
-        getAccessTokenSilently().then(token => {
-            ReservationDataService.create(data, token)
-            .then(() => {
-                console.log("Created new reservation successfully!");
-                history.push("/Reservation")
-                setVisitedStep2(false);
-            })
-            .catch((e) => {
-                console.log(e);
-                alert(e)
-            });
-        })
-        
-    }
+    const canGoNext = step === STEP.DETAILS || (step === STEP.MATERIEL && materiel.length > 0);
+
+    // ---------- Save ----------
+
+    const submit = async () => {
+        if (submitting) return; // no double reservation on double click
+        setSubmitting(true);
+        try {
+            const token = await getAccessTokenSilently();
+            // Admins and teachers' reservations are approved directly (UI only: the API must enforce this too)
+            const payload = toCreatePayload({ details, materiel, user, autoApprove: canManageReservations(user) });
+            await ReservationDataService.create(payload, token);
+            history.push('/Reservation');
+        } catch (error) {
+            console.error('Could not create reservation', error);
+            alert("La réservation n'a pas pu être enregistrée. Réessayez.");
+            setSubmitting(false);
+        }
+    };
+
+    // ---------- Render ----------
+
     return (
         <div>
             <Stepper activeStep={step} alternativeLabel style={{ padding: isMobile ? '16px 0' : 24 }}>
-                {steps.map((label, index) => {
-                    return (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    );
-                })}
+                {(isMobile ? STEP_LABELS.short : STEP_LABELS.long).map((label) => (
+                    <Step key={label}><StepLabel>{label}</StepLabel></Step>
+                ))}
             </Stepper>
-            {/* MUI v4 Box uses system props directly (the `sx` prop only exists in MUI v5) */}
-            <Box display="flex" flexDirection="row" pt={1} pb={2}>
-                <Button
-                color="inherit"
-                variant="outlined"
-                onClick={previousStep}
-                >
-                Back
+
+            <Box display="flex" pt={1} pb={2}>
+                <Button color="inherit" variant="outlined" onClick={goBack} disabled={submitting}>
+                    {step === STEP.DETAILS ? 'Annuler' : 'Retour'}
                 </Button>
                 <Box flex="1 1 auto" />
-                <Button color="primary" variant="contained" onClick={nextStep} disabled={step === 2 || (step === 1 && materiel.length === 0)}>
-                Next
-                </Button>
+                {step !== STEP.SUMMARY && (
+                    <Button color="primary" variant="contained" onClick={goNext} disabled={!canGoNext}>
+                        Suivant
+                    </Button>
+                )}
             </Box>
-            {step === 0 &&
-               <Container className="d-flex justify-content-center">
-                    <Form noValidate validated={validated} className="w-100" style={{ maxWidth: 720 }}>
-                        <Row className="mb-3">
-                            <Form.Group as={Col} xs={12} controlId="validationCustom01">
-                                <Form.Label>Évènement</Form.Label>
-                                <Form.Control
-                                    required
-                                    type="text"
-                                    value={reservationName}
-                                    onChange={(e) => setReservationName(e.target.value)}
-                                    placeholder="Nom"
-                                />
-                                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-                            </Form.Group>
-                        </Row>
-                        <Row className="mb-3">
-                            <Form.Group as={Col} xs={12} controlId="validationCustom02">
-                                <Form.Label>Beneficiaire</Form.Label>
-                                <Form.Control
-                                    required
-                                    type="email"
-                                    value={beneficiaire}
-                                    onChange={(e) => setBeneficiaire(e.target.value)}
-                                    placeholder="Beneficiaire email @"
-                                />
-                                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-                            </Form.Group>
-                        </Row>
-                        <Row className="mb-3">
-                            <Form.Group as={Col} xs={12} controlId="validationCustom02">
-                                <Form.Label>Lieu</Form.Label>
-                                <Form.Control
-                                    required
-                                    type="text"
-                                    value={lieu}
-                                    onChange={(e) => setLieu(e.target.value)}
-                                    placeholder="Lieu"
-                                />
-                                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-                            </Form.Group>
-                        </Row>
-                        <Row className="mb-3">
-                            <Form.Group controlId="validationReservation03">
-                                <Form.Label>Select period</Form.Label>
-                                <DatePickerReserv from={from} setStartDate={setStartDate} to={to}  setEndDate={setEndDate}/>
-                            </Form.Group>
-                        </Row> 
-                    </Form>
-                    </Container>
-            }
-            {step === 1 && (
-                <ListMaterieleReservation materiel={materiel} setMateriel={setMateriel} materielReserve={materielReserve} visitedStep2={visitedStep2} allMateriele={allMateriele} setAllMateriele={setAllMateriele} />
+
+            {step === STEP.DETAILS && (
+                <ReservationDetailsForm details={details} onChange={updateDetail} errors={errors} showErrors={showErrors} />
             )}
-            {step === 2 && (
-                //loading ? <Loading /> : 
-                <Container className="mx-auto" style={{ maxWidth: 720 }}>
-                    <Row className="mb-3">
-                        <h5>Informations :</h5>
-                        <ListGroup variant="flush">
-                            <ListGroup.Item>Titre: <b>{reservationName}</b></ListGroup.Item>
-                            <ListGroup.Item>Créateur de la réservation: <b>{creatorEmail}</b></ListGroup.Item>
-                            <ListGroup.Item>Lieu: <b>{lieu}</b></ListGroup.Item>
-                            <ListGroup.Item>Bénéficiaire: <b>{beneficiaire}</b></ListGroup.Item>
-                            <ListGroup.Item>{`DU : ${common.convertDateToFr(from)}, AU: ${common.convertDateToFr(to)}`}</ListGroup.Item>
-                        </ListGroup>
-                    </Row>
-                    <Row className="mb-3">
-                        <h5>Matériel</h5>
-                        <ListGroup variant="flush">
-                            {materiel.map(item =>{
-                                console.log(item)
-                                return(
-                                    <ListGroup.Item key={item.id}>{`${item.quantite} x ${item.label}`}</ListGroup.Item>
-                                ) 
-                            })}
-                        </ListGroup>
-                    </Row>
-                    <Row className="mb-3">
-                        <h5>Totaux</h5>
-                        <ListGroup variant="flush">
-                            <ListGroup.Item>Total: <b>{totalSum} -.CHF</b></ListGroup.Item>
-                            <ListGroup.Item>Total pour <b>{daysReservation}</b> jours: <b>{totalSumWithDays} -.CHF</b></ListGroup.Item>
-                        </ListGroup>
-                    </Row>
-                    <Row className="mb-3">
-                        <PDFDownloadLink  document= {<GeneratePdf reservationName={reservationName} lieu={lieu} from={from} to={to} 
-                            quantiteMateriel={materiel} totalSum={totalSum} daysReservation={daysReservation} totalSumWithDays={totalSumWithDays}
-                            creatorEmail={creatorEmail} beneficiaire={beneficiaire}/>} 
-                            fileName="fee_acceptance.pdf">
-                            {({ blob, url, loading, error }) => (loading ? 'Chargement du document...' : 'Téléchargez votre devis')}
-                        </PDFDownloadLink>
-                    </Row>
-                    <Row className="mb-3">
-                        <Button color="primary" variant="contained" onClick={submitStep}>
-                                Réservation
-                        </Button>
-                    </Row>
-                </Container>       
-                        
+
+            {step === STEP.MATERIEL && (
+                <ListMaterieleReservation
+                    materiel={materiel}
+                    setMateriel={setMateriel}
+                    materielReserve={reservedByOthers}
+                    allMateriele={catalog}
+                    setAllMateriele={setCatalog}
+                />
+            )}
+
+            {step === STEP.SUMMARY && (
+                <ReservationSummary
+                    details={details}
+                    materiel={materiel}
+                    creatorEmail={user.email}
+                    totals={totals}
+                    submitting={submitting}
+                    onSubmit={submit}
+                />
             )}
         </div>
-    )
+    );
 }
 
 export default AddReservation;

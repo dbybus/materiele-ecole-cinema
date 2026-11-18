@@ -20,19 +20,14 @@ class ReservationDataService {
     });
   }
 
-  async create(data, token) {
+  // Resolves with the created reservation; rejects on failure.
+  // (It used to swallow errors and resolve anyway, so callers treated a failed save as a success.)
+  create(data, token) {
     return http.post("/reservation/create", data, {
       headers:{
         'Authorization': `Bearer ${token}`
       }
-    })
-      .then(result => {
-        // Handle result…
-        console.log(result.data);
-      }).catch((e) => {
-          console.log(e);
-          alert(e)
-      });
+    });
   }
 
   update(id, data, token) {
