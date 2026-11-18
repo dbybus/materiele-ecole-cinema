@@ -6,6 +6,7 @@ import {Nav, Navbar, Container} from 'react-bootstrap'
 import { useAuth0 } from '../auth';
 import TokenService from '../services/token.service'
 import ReservationDataService from '../services/reservation.service'
+import { RESERVATIONS_CHANGED } from './reservation/reservationUtils'
 
 function NavBar(){
   const { user, getAccessTokenSilently} = useAuth0();
@@ -26,7 +27,7 @@ function NavBar(){
       setProfRole(user['https://example-api/role'].find(element => element === 'Prof'));
       TokenService.setUser(user);
 
-      getAccessTokenSilently().then(token =>{
+      const loadCounts = () => getAccessTokenSilently().then(token =>{
           TokenService.setLocalAccessToken(token);
 
           ReservationDataService.getAll(token).then(response => {
@@ -36,7 +37,12 @@ function NavBar(){
           .catch((e) => {
             console.log(e);
           });
-      })
+      });
+
+      loadCounts();
+      // Recount when a page creates / approves / refuses / deletes a reservation
+      window.addEventListener(RESERVATIONS_CHANGED, loadCounts);
+      return () => window.removeEventListener(RESERVATIONS_CHANGED, loadCounts);
     }
 
   }, [user]);

@@ -1,145 +1,219 @@
-import React, { useEffect, useState, forwardRef } from 'react'
-import ReservationDataService from "../services/reservation.service";
-import MaterialTable from 'material-table'
-import AddBox from '@material-ui/icons/AddBox';
-import ArrowDownward from '@material-ui/icons/ArrowDownward';
-import Check from '@material-ui/icons/Check';
-import ChevronLeft from '@material-ui/icons/ChevronLeft';
-import ChevronRight from '@material-ui/icons/ChevronRight';
-import Clear from '@material-ui/icons/Clear';
-import DeleteOutline from '@material-ui/icons/DeleteOutline';
-import Edit from '@material-ui/icons/Edit';
-import FilterList from '@material-ui/icons/FilterList';
-import FirstPage from '@material-ui/icons/FirstPage';
-import LastPage from '@material-ui/icons/LastPage';
-import Remove from '@material-ui/icons/Remove';
-import SaveAlt from '@material-ui/icons/SaveAlt';
-import Search from '@material-ui/icons/Search';
-import ViewColumn from '@material-ui/icons/ViewColumn';
-import {Container} from 'react-bootstrap'
-import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
-import { ListGroup } from "react-bootstrap";
-import { FcApproval, FcDisclaimer } from "react-icons/fc";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import MaterialTable from 'material-table';
+import { Container, Alert } from 'react-bootstrap';
+import { Snackbar } from '@material-ui/core';
+import DoneAllIcon from '@material-ui/icons/DoneAll';
+import ReservationDataService from '../services/reservation.service';
+import { tableIcons, localizationFr } from '../components/table/materialTableConfig';
+import { approvalConflicts, approvalPayload, notifyReservationsChanged } from '../components/reservation/reservationUtils';
+import {
+  ConflictStatus, DecisionButtons, PeriodText, RequestedMateriel, StartsIn,
+} from '../components/reservation/PendingReservationParts';
 import { useAuth0 } from '../auth';
+import useIsMobile from '../hooks/useIsMobile';
+import useFitPageSize from '../hooks/useFitPageSize';
 
 const common = require('../common');
 
-function ListNotApprovedReservations() {
-  const isMobile = useIsMobile();
-  const isCompact = useIsCompact();
-  const [noApprovedReservervations, setNoApprovedReservervations] = useState([]);
+const itemCount = (r) => (r.getReservation || []).reduce((sum, line) => sum + line.quantite, 0);
 
-  // Long date on wide screens, short one ("24 nov. 2026") below 1200px; never wraps
-  const formatDate = (date) => isCompact ? common.convertDateToFrShort(date) : common.convertDateToFr(date);
-  const dateStyle = { whiteSpace: 'nowrap' };
-  const {getAccessTokenSilently} = useAuth0();
-  const [token, setToken] = useState();
-
-  const tableIcons = {
-    Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
-    Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
-    Clear: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Delete: forwardRef((props, ref) => <DeleteOutline {...props} ref={ref} />),
-    DetailPanel: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-    Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
-    Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
-    Filter: forwardRef((props, ref) => <FilterList {...props} ref={ref} />),
-    FirstPage: forwardRef((props, ref) => <FirstPage {...props} ref={ref} />),
-    LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
-    NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-    PreviousPage: forwardRef((props, ref) => <ChevronLeft {...props} ref={ref} />),
-    ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
-    SortArrow: forwardRef((props, ref) => <ArrowDownward {...props} ref={ref} />),
-    ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
-    ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
-  };
-
-  const getAllReservations = async () => {
-    getAccessTokenSilently().then(token => {
-      setToken(token);
-      ReservationDataService.getAll(token)
-      .then(response => {
-          console.log(response.data)
-          setNoApprovedReservervations(response.data.filter(item => !item.isApproved));
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-    })
-    
-  };
- 
-  useEffect(() =>{
-    getAllReservations();
-  },[])
-
-  // Uses the reserved quantity of each line (the previous version counted every line as 1)
-  const ProductList = (rowData) => {
-    const renderedMateriels = rowData.getReservation.map(item => {
-      return <ListGroup.Item key={item.id}>{item.quantite} x {item.getMateriel.label}</ListGroup.Item>
-    })
-
-    return <ListGroup variant="flush" className="detail-panel">{renderedMateriels}</ListGroup>
-  }
-
+/** Shown when nothing is waiting. */
+function EmptyState() {
   return (
-    
-    <Container className="table-view">
-      <MaterialTable 
-        icons={tableIcons}
-        options = {{
-          padding: isMobile ? 'dense' : 'default',
-          // material-table passes (rowData, index): the old version used rowData as the index, so rows were never striped
-          rowStyle: (rowData, index) => index % 2 === 0 ? {background:"#f5f5f5"} : null,
-          pageSize: 10,
-          pageSizeOptions: [10, 20, 50]
-        }}
-
-        columns={[
-          { title: 'Titre', field: 'titre', editable: 'never', cellStyle: { minWidth: 160 } },
-          { title: 'Lieu', field: 'lieu', hidden: isCompact, editable: 'never'},
-          // Long email addresses wrap instead of stretching the whole table
-          { title: 'Bénéficiaire', field: 'beneficiaire', editable: 'never', cellStyle: { wordBreak: 'break-word', minWidth: 140 } },
-          { title: 'Date début', field: 'date_start', cellStyle: dateStyle, render: rowData => formatDate(rowData.date_start) },
-          { title: 'Date fin', field: 'date_end', cellStyle: dateStyle, render: rowData => formatDate(rowData.date_end) },
-        ]}
-        data={noApprovedReservervations}
-        title="Valider des reservation"
-        actions={[
-          (rowData) => ({
-            icon: () => <FcApproval />,
-            tooltip: 'Accepter',
-            onClick: () => {
-              const dataDelete = [...noApprovedReservervations];
-              const index = rowData.tableData.id;
-              rowData.isApproved = true;
-              ReservationDataService.update(rowData.id, rowData, token);
-              dataDelete.splice(index, 1);
-              setNoApprovedReservervations([...dataDelete]);
-            }
-          }),
-          (rowData) => ({
-            icon: () => <FcDisclaimer />,
-            tooltip: 'Refuser',
-            onClick: () => {
-              const dataDelete = [...noApprovedReservervations];
-              const index = rowData.tableData.id;
-              ReservationDataService.delete(rowData.id, token);
-              dataDelete.splice(index, 1);
-              setNoApprovedReservervations([...dataDelete]);
-            }
-          })
-        ]}
-        detailPanel={ rowData => {
-            return ProductList(rowData)
-          } 
-        }
-      />
-    </Container>
-   
-    
-  )
+    <div className="empty-state">
+      <DoneAllIcon className="empty-state-icon" />
+      <h2>Aucune réservation en attente</h2>
+      <p className="text-muted mb-0">Toutes les demandes ont été traitées.</p>
+    </div>
+  );
 }
 
-export default ListNotApprovedReservations
+/** Extra information shown when a table row is expanded. */
+function RowDetails({ reservation, conflicts }) {
+  return (
+    <div className="pending-details">
+      <div>
+        <h3 className="pending-details-title">Matériel demandé</h3>
+        <RequestedMateriel reservation={reservation} conflicts={conflicts} />
+      </div>
+      <dl className="pending-details-meta">
+        <dt>Lieu</dt><dd>{reservation.lieu}</dd>
+        <dt>Demandée par</dt><dd>{reservation.createurEmail || '—'}</dd>
+        <dt>Demandée le</dt><dd>{reservation.createdAt ? common.convertDateToFr(reservation.createdAt) : '—'}</dd>
+      </dl>
+    </div>
+  );
+}
+
+/**
+ * Admins / teachers: reservations waiting for approval, soonest first.
+ * Each request shows whether approving it would overbook equipment already promised to approved reservations.
+ */
+function ListNotApprovedReservations() {
+  const isMobile = useIsMobile();
+  const { getAccessTokenSilently } = useAuth0();
+
+  const [reservations, setReservations] = useState([]); // all of them: approved ones are needed for the stock check
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState({});                 // { [id]: 'approve' | 'refuse' }
+  const [flash, setFlash] = useState(null);
+
+  const loadReservations = useCallback(async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const { data } = await ReservationDataService.getAll(token);
+      setReservations(data);
+    } catch (error) {
+      console.error('Could not load reservations', error);
+    } finally {
+      setLoaded(true);
+    }
+  }, [getAccessTokenSilently]);
+
+  useEffect(() => { loadReservations(); }, [loadReservations]);
+
+  const pending = useMemo(
+    () => reservations
+      .filter((r) => !r.isApproved)
+      .sort((a, b) => new Date(a.date_start) - new Date(b.date_start)),
+    [reservations]
+  );
+  const conflictsById = useMemo(
+    () => new Map(pending.map((r) => [r.id, approvalConflicts(r, reservations)])),
+    [pending, reservations]
+  );
+  const conflictCount = pending.filter((r) => conflictsById.get(r.id).length > 0).length;
+
+  // ---------- Decisions ----------
+
+  const decide = async (reservation, kind) => {
+    const conflicts = conflictsById.get(reservation.id) || [];
+    const question = kind === 'approve'
+      ? conflicts.length > 0 &&
+        `« ${reservation.titre} » dépasse le stock disponible :\n${conflicts.map((c) => `• ${c.label} : ${c.requested} demandé(s), ${c.available} disponible(s)`).join('\n')}\n\nValider quand même ?`
+      : `Refuser « ${reservation.titre} » ?\n\nLa demande sera supprimée ; ${reservation.beneficiaire} devra en faire une nouvelle.`;
+    if (question && !window.confirm(question)) return;
+
+    setBusy((b) => ({ ...b, [reservation.id]: kind }));
+    try {
+      const token = await getAccessTokenSilently();
+      if (kind === 'approve') {
+        await ReservationDataService.update(reservation.id, approvalPayload(reservation), token);
+        setFlash({ variant: 'success', text: `« ${reservation.titre} » validée.` });
+      } else {
+        await ReservationDataService.delete(reservation.id, token);
+        setFlash({ variant: 'secondary', text: `« ${reservation.titre} » refusée.` });
+      }
+      await loadReservations();
+      notifyReservationsChanged(); // the navbar badges recount
+    } catch (error) {
+      console.error('Decision failed', error);
+      setFlash({ variant: 'danger', text: "L'action n'a pas pu être enregistrée. Réessayez." });
+    } finally {
+      setBusy((b) => { const next = { ...b }; delete next[reservation.id]; return next; });
+    }
+  };
+
+  // ---------- Table ----------
+
+  const { containerRef, tableRef, pageSize, pageSizeOptions, onChangeRowsPerPage } =
+    useFitPageSize({ data: pending, fallbackRowHeight: 80 });
+
+  const columns = [
+    {
+      title: 'Réservation', field: 'titre', cellStyle: { minWidth: 200 },
+      render: (r) => <><div className="mat-name">{r.titre}</div><div className="small text-muted">{r.lieu}</div></>,
+    },
+    { title: 'Bénéficiaire', field: 'beneficiaire', cellStyle: { overflowWrap: 'anywhere', minWidth: 210 } },
+    {
+      title: 'Période', field: 'date_start', defaultSort: 'asc', width: 210,
+      render: (r) => <><PeriodText reservation={r} /><div><StartsIn date={r.date_start} /></div></>,
+    },
+    {
+      title: 'Matériel', field: 'getReservation', sorting: false, searchable: false, width: 200,
+      render: (r) => <><div>{itemCount(r)} article{itemCount(r) > 1 ? 's' : ''}</div><ConflictStatus conflicts={conflictsById.get(r.id) || []} /></>,
+    },
+    {
+      title: '', field: 'id', sorting: false, searchable: false, width: 230,
+      render: (r) => <DecisionButtons busy={busy[r.id]} onApprove={() => decide(r, 'approve')} onRefuse={() => decide(r, 'refuse')} />,
+    },
+  ];
+
+  // ---------- Render ----------
+
+  return (
+    <div>
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Réservations à valider</h1>
+          <p className="page-subtitle">
+            {pending.length} en attente
+            {conflictCount > 0 && <> · <span className="text-danger">{conflictCount} avec conflit de stock</span></>}
+          </p>
+        </div>
+      </header>
+
+      {loaded && pending.length === 0 ? (
+        <EmptyState />
+      ) : isMobile ? (
+        <ul className="picker-list">
+          {pending.map((r) => {
+            const conflicts = conflictsById.get(r.id) || [];
+            return (
+              <li key={r.id} className={`pending-card${conflicts.length ? ' has-conflict' : ''}`}>
+                <div className="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <div className="mat-name">{r.titre}</div>
+                    <div className="small text-muted">{r.lieu} · {r.beneficiaire}</div>
+                  </div>
+                  <StartsIn date={r.date_start} />
+                </div>
+                <div className="small my-2"><PeriodText reservation={r} /></div>
+                <RequestedMateriel reservation={r} conflicts={conflicts} />
+                <div className="d-flex justify-content-between align-items-center mt-2 gap-2 flex-wrap">
+                  <ConflictStatus conflicts={conflicts} />
+                  <DecisionButtons busy={busy[r.id]} onApprove={() => decide(r, 'approve')} onRefuse={() => decide(r, 'refuse')} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <Container className="table-view pending-table" ref={containerRef}>
+          <MaterialTable
+            title=""
+            tableRef={tableRef}
+            icons={tableIcons}
+            localization={localizationFr}
+            columns={columns}
+            data={pending}
+            onChangeRowsPerPage={onChangeRowsPerPage}
+            detailPanel={[{
+              tooltip: 'Détails',
+              render: (r) => <RowDetails reservation={r} conflicts={conflictsById.get(r.id) || []} />,
+            }]}
+            options={{
+              showTitle: false,
+              searchFieldAlignment: 'left',
+              searchFieldStyle: { minWidth: 280 },
+              pageSize,
+              pageSizeOptions,
+              emptyRowsWhenPaging: false,
+              // Requests that would overbook get an orange accent
+              rowStyle: (r) => ((conflictsById.get(r.id) || []).length > 0 ? { borderLeft: '4px solid #ef6c00' } : { borderLeft: '4px solid transparent' }),
+            }}
+          />
+        </Container>
+      )}
+
+      <Snackbar open={!!flash} autoHideDuration={5000} onClose={() => setFlash(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert variant={flash ? flash.variant : 'success'} className="mb-0 shadow" dismissible onClose={() => setFlash(null)}>
+          {flash && flash.text}
+        </Alert>
+      </Snackbar>
+    </div>
+  );
+}
+
+export default ListNotApprovedReservations;

@@ -98,6 +98,57 @@ export const peakReservedQuantities = (reservations, start, end) => {
   return [...peak.entries()].map(([id, quantite]) => ({ id, quantite }));
 };
 
+// ---------- Cross-component refresh ----------
+
+// Fired after a reservation is created, approved, refused, changed or deleted, so components that
+// show counts (the navbar badges) can reload. Listen with window.addEventListener(RESERVATIONS_CHANGED, …).
+export const RESERVATIONS_CHANGED = 'reservations:changed';
+export const notifyReservationsChanged = () => window.dispatchEvent(new Event(RESERVATIONS_CHANGED));
+
+// ---------- Validation of pending reservations ----------
+
+/**
+ * API reservation -> update payload that only approves it.
+ * `materiel: []` tells the API to leave the equipment lines untouched
+ * (sending the raw row made the API crash on `req.body.materiel.forEach`).
+ */
+export const approvalPayload = (reservation) => ({
+  id: reservation.id,
+  titre: reservation.titre,
+  lieu: reservation.lieu,
+  beneficiaire: reservation.beneficiaire,
+  date_start: reservation.date_start,
+  date_end: reservation.date_end,
+  isApproved: true,
+  materiel: [],
+});
+
+/**
+ * What approving `reservation` would overbook, given the reservations ALREADY APPROVED.
+ * Uses the stock (`Qtotale`) the API sends with each line.
+ * Returns [{ id, label, requested, available }] (empty = no conflict).
+ */
+export const approvalConflicts = (reservation, allReservations) => {
+  const start = new Date(reservation.date_start);
+  const end = new Date(reservation.date_end);
+  const approvedOthers = allReservations.filter((r) => r.isApproved && r.id !== reservation.id);
+  const taken = new Map(peakReservedQuantities(approvedOthers, start, end).map((l) => [l.id, l.quantite]));
+
+  return (reservation.getReservation || [])
+    .map((line) => {
+      const m = line.getMateriel || {};
+      const available = Math.max(0, (m.Qtotale || 0) - (taken.get(m.id) || 0));
+      return { id: m.id, label: m.label, requested: line.quantite, available };
+    })
+    .filter((c) => c.requested > c.available);
+};
+
+/** Number of days until the reservation starts (negative = already started). */
+export const daysUntil = (date, now = new Date()) => {
+  const day = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+  return Math.round((day(date) - day(now)) / 86400000);
+};
+
 /** Wizard state -> API create payload. */
 export const toCreatePayload = ({ details, materiel, user, autoApprove }) => {
   const { start, end } = toReservationPeriod(details.from, details.to);

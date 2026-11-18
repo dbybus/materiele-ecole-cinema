@@ -10,7 +10,7 @@ import ReservationSummary from '../components/reservation/ReservationSummary';
 import ReservationRecap from '../components/reservation/ReservationRecap';
 import SelectionChips from '../components/reservation/SelectionChips';
 import {
-    peakReservedQuantities, toCreatePayload, toReservationPeriod, totalsFor, validateDetails,
+    notifyReservationsChanged, peakReservedQuantities, toCreatePayload, toReservationPeriod, totalsFor, validateDetails,
 } from '../components/reservation/reservationUtils';
 import ReservationDataService from '../services/reservation.service';
 import { useAuth0 } from '../auth';
@@ -119,6 +119,7 @@ function AddReservation({ allReservations }) {
             const token = await getAccessTokenSilently();
             const payload = toCreatePayload({ details, materiel, user, autoApprove });
             await ReservationDataService.create(payload, token);
+            notifyReservationsChanged(); // the navbar badges recount
             // The calendar shows this message once it's back
             history.push('/Reservation', {
                 flash: autoApprove ? 'Réservation enregistrée et confirmée.' : 'Réservation envoyée pour validation.',

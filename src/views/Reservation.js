@@ -11,7 +11,9 @@ import ReservationDataService from '../services/reservation.service';
 import AddReservation from './AddReservation';
 import ReservationQuickInfo from '../components/reservation/ReservationQuickInfo';
 import ReservationEditor from '../components/reservation/ReservationEditor';
-import { STATUS_COLORS, toSchedulerEvent, toUpdatePayload } from '../components/reservation/reservationUtils';
+import {
+    STATUS_COLORS, notifyReservationsChanged, toSchedulerEvent, toUpdatePayload,
+} from '../components/reservation/reservationUtils';
 import { useAuth0 } from '../auth';
 import { canManageReservations } from '../auth/roles';
 import useIsMobile from '../hooks/useIsMobile';
@@ -83,6 +85,7 @@ function Reservation() {
         } finally {
             changedMaterielsRef.current = null;
             loadReservations(); // reload after the request finished (the old code reloaded the page mid-request)
+            notifyReservationsChanged(); // the navbar badges recount (approval may have changed)
         }
     };
 
@@ -95,6 +98,7 @@ function Reservation() {
             alert("La réservation n'a pas pu être supprimée.");
         } finally {
             loadReservations();
+            notifyReservationsChanged();
         }
     };
 
