@@ -143,6 +143,29 @@ export const approvalConflicts = (reservation, allReservations) => {
     .filter((c) => c.requested > c.available);
 };
 
+// ---------- "Mes réservations" ----------
+
+const sameEmail = (a, b) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/**
+ * Reservations that concern the user: they are the beneficiary OR they created it
+ * (a teacher booking for a student sees it too). Emails compared case-insensitively.
+ */
+export const isMine = (reservation, user) =>
+  sameEmail(reservation.beneficiaire, user.email) ||
+  sameEmail(reservation.createurEmail, user.email) ||
+  (!!user.sub && reservation.createur === user.sub);
+
+/** 'current' (equipment out now), 'upcoming' or 'past'. */
+export const timelineOf = (reservation, now = new Date()) => {
+  if (new Date(reservation.date_end) < now) return 'past';
+  if (new Date(reservation.date_start) <= now) return 'current';
+  return 'upcoming';
+};
+
+/** API reservation lines -> [{ id, label, quantite, tarifLoc, ... }] (the shape totals and the PDF use). */
+export const materielOf = (reservation) => (reservation.getReservation || []).map(toMaterielLine);
+
 /** Number of days until the reservation starts (negative = already started). */
 export const daysUntil = (date, now = new Date()) => {
   const day = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };

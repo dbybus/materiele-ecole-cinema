@@ -1,121 +1,115 @@
-import React, { useEffect, useState, forwardRef } from 'react'
-import ReservationDataService from "../services/reservation.service";
-import MaterialTable from 'material-table'
-import AddBox from '@material-ui/icons/AddBox';
-import ArrowDownward from '@material-ui/icons/ArrowDownward';
-import Check from '@material-ui/icons/Check';
-import ChevronLeft from '@material-ui/icons/ChevronLeft';
-import ChevronRight from '@material-ui/icons/ChevronRight';
-import Clear from '@material-ui/icons/Clear';
-import DeleteOutline from '@material-ui/icons/DeleteOutline';
-import Edit from '@material-ui/icons/Edit';
-import FilterList from '@material-ui/icons/FilterList';
-import FirstPage from '@material-ui/icons/FirstPage';
-import LastPage from '@material-ui/icons/LastPage';
-import Remove from '@material-ui/icons/Remove';
-import SaveAlt from '@material-ui/icons/SaveAlt';
-import Search from '@material-ui/icons/Search';
-import ViewColumn from '@material-ui/icons/ViewColumn';
-import {Container} from 'react-bootstrap'
-import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
-import { ListGroup } from "react-bootstrap";
-import { FcApproval, FcDisclaimer } from "react-icons/fc";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { Button } from '@material-ui/core';
+import AddIcon from '@material-ui/icons/Add';
+import EventAvailableIcon from '@material-ui/icons/EventAvailable';
+import ReservationDataService from '../services/reservation.service';
+import MyReservationCard from '../components/reservation/MyReservationCard';
+import { isMine, timelineOf, RESERVATIONS_CHANGED } from '../components/reservation/reservationUtils';
 import { useAuth0 } from '../auth';
 
-const common = require('../common');
+const byStart = (a, b) => new Date(a.date_start) - new Date(b.date_start);
 
-function ListMesReservations() {
-  const isMobile = useIsMobile();
-  const isCompact = useIsCompact();
-  const [myReservations, setMyReservations] = useState([]);
-
-  // Long date on wide screens, short one ("24 nov. 2026") below 1200px; never wraps
-  const formatDate = (date) => isCompact ? common.convertDateToFrShort(date) : common.convertDateToFr(date);
-  const dateStyle = { whiteSpace: 'nowrap' };
-  const { user, getAccessTokenSilently } = useAuth0();
-
-  const tableIcons = {
-    Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
-    Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
-    Clear: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Delete: forwardRef((props, ref) => <DeleteOutline {...props} ref={ref} />),
-    DetailPanel: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-    Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
-    Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
-    Filter: forwardRef((props, ref) => <FilterList {...props} ref={ref} />),
-    FirstPage: forwardRef((props, ref) => <FirstPage {...props} ref={ref} />),
-    LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
-    NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
-    PreviousPage: forwardRef((props, ref) => <ChevronLeft {...props} ref={ref} />),
-    ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
-    Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
-    SortArrow: forwardRef((props, ref) => <ArrowDownward {...props} ref={ref} />),
-    ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
-    ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
-  };
-
-  const getAllReservations = async () => {
-    if(user){
-      getAccessTokenSilently().then(token => {
-        ReservationDataService.getAll(token)
-        .then(response => {
-            setMyReservations(response.data.filter(item => item.beneficiaire === user.email));
-        })
-        .catch((e) => {
-          console.log(e);
-        });
-      })  
-    }
-  };
- 
-  useEffect(() =>{
-    getAllReservations();
-
-    console.log(myReservations)
-  },[])
-
-  const productList = (rowData) => {
-    const renderedMateriels = rowData.getReservation.map(item => {
-      return <ListGroup.Item key={item.id}>{item.quantite} x {item.getMateriel.label}</ListGroup.Item>
-    })
-
-    return <ListGroup variant="flush" className="detail-panel">{renderedMateriels}</ListGroup>
-  }
-
+/** A titled group of cards ("En cours et à venir", "Passées"). */
+function Section({ title, reservations, userEmail, emptyText }) {
   return (
-    
-    <Container className="table-view">
-      <MaterialTable 
-        icons={tableIcons}
-        options = {{
-          padding: isMobile ? 'dense' : 'default',
-          // Coloured accent on the left instead of a full green/orange row (dark text on green was unreadable)
-          rowStyle: (rowData) => ({ borderLeft: `4px solid ${rowData.isApproved ? '#2e7d32' : '#ef6c00'}` }),
-          paging: false,
-          sorting: true
-        }}
-        columns={[
-          { title: 'Titre', field: 'titre', editable: 'never', cellStyle: { minWidth: 180 } },
-          { title: 'Lieu', field: 'lieu', editable: 'never', hidden: true},
-          // Always the logged-in user here, so it's the first column to go on narrower screens
-          { title: 'Bénéficiaire', field: 'beneficiaire', hidden: isCompact, editable: 'never'},
-          { title: 'Date début', field: 'date_start', cellStyle: dateStyle, render: rowData => formatDate(rowData.date_start) },
-          { title: 'Date fin', field: 'date_end', cellStyle: dateStyle, render: rowData => formatDate(rowData.date_end) },
-          { title: isMobile ? 'État' : 'État de la réservation', field: 'isApproved', editable: 'never', defaultSort: 'asc', render: rowData => (
-            <span className={`status-chip ${rowData.isApproved ? 'status-chip--ok' : 'status-chip--pending'}`}>
-              {!rowData.isApproved ? 'En attente' : 'Validé'}
-            </span>
-          ),}
-        ]}
-        data={myReservations}
-        title="Mes réservations"
-        detailPanel={ rowData => {
-            return productList(rowData)
-          } 
-        }
-      />
-    </Container>
-  )
+    <section className="mb-4">
+      <h2 className="section-title">{title} <span className="text-muted fw-normal">({reservations.length})</span></h2>
+      {reservations.length === 0
+        ? <p className="text-muted small">{emptyText}</p>
+        : (
+          <div className="my-res-grid">
+            {reservations.map((r) => <MyReservationCard key={r.id} reservation={r} userEmail={userEmail} />)}
+          </div>
+        )}
+    </section>
+  );
 }
 
-export default ListMesReservations
+/**
+ * The logged-in user's reservations: the ones they're the beneficiary of AND the ones they created
+ * for someone else. Upcoming first (soonest on top), past ones below (most recent on top).
+ */
+function ListMesReservations() {
+  const { user, getAccessTokenSilently } = useAuth0();
+  const history = useHistory();
+  const [reservations, setReservations] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [showPast, setShowPast] = useState(false);
+
+  const loadReservations = useCallback(async () => {
+    if (!user) return;
+    try {
+      const token = await getAccessTokenSilently();
+      const { data } = await ReservationDataService.getAll(token);
+      setReservations(data.filter((r) => isMine(r, user)));
+    } catch (error) {
+      console.error('Could not load reservations', error);
+    } finally {
+      setLoaded(true);
+    }
+  }, [user, getAccessTokenSilently]);
+
+  useEffect(() => {
+    loadReservations();
+    // Stay in sync when a reservation changes elsewhere (e.g. approved in another view)
+    window.addEventListener(RESERVATIONS_CHANGED, loadReservations);
+    return () => window.removeEventListener(RESERVATIONS_CHANGED, loadReservations);
+  }, [loadReservations]);
+
+  const { active, past } = useMemo(() => {
+    const now = new Date();
+    return {
+      active: reservations.filter((r) => timelineOf(r, now) !== 'past').sort(byStart),
+      past: reservations.filter((r) => timelineOf(r, now) === 'past').sort((a, b) => byStart(b, a)),
+    };
+  }, [reservations]);
+  const pendingCount = active.filter((r) => !r.isApproved).length;
+
+  const newReservation = () => history.push('/Reservation', { openWizard: true });
+
+  return (
+    <div>
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Mes réservations</h1>
+          <p className="page-subtitle">
+            {active.length} en cours ou à venir
+            {pendingCount > 0 && <> · <span className="text-warning-dark">{pendingCount} en attente de validation</span></>}
+          </p>
+        </div>
+        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={newReservation}>
+          Nouvelle réservation
+        </Button>
+      </header>
+
+      {loaded && reservations.length === 0 ? (
+        <div className="empty-state">
+          <EventAvailableIcon className="empty-state-icon" style={{ color: '#3f51b5' }} />
+          <h2>Aucune réservation pour l'instant</h2>
+          <p className="text-muted">Vos demandes de matériel apparaîtront ici, avec leur statut et leur devis.</p>
+          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={newReservation}>
+            Faire une réservation
+          </Button>
+        </div>
+      ) : (
+        <>
+          <Section title="En cours et à venir" reservations={active} userEmail={user && user.email}
+            emptyText="Aucune réservation en cours ou à venir." />
+
+          {past.length > 0 && (
+            showPast
+              ? <Section title="Passées" reservations={past} userEmail={user && user.email} emptyText="" />
+              : (
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowPast(true)}>
+                  Afficher les réservations passées ({past.length})
+                </button>
+              )
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default ListMesReservations;

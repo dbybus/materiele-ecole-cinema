@@ -6,7 +6,7 @@ import {Nav, Navbar, Container} from 'react-bootstrap'
 import { useAuth0 } from '../auth';
 import TokenService from '../services/token.service'
 import ReservationDataService from '../services/reservation.service'
-import { RESERVATIONS_CHANGED } from './reservation/reservationUtils'
+import { RESERVATIONS_CHANGED, isMine } from './reservation/reservationUtils'
 
 function NavBar(){
   const { user, getAccessTokenSilently} = useAuth0();
@@ -32,7 +32,8 @@ function NavBar(){
 
           ReservationDataService.getAll(token).then(response => {
               setNonApproved(response.data.filter(item => !item.isApproved).length)
-              setMyNonApproved(response.data.filter(item => !item.isApproved && user.email === item.beneficiaire).length);
+              // Same rule as "Mes réservations": beneficiary or creator, emails compared case-insensitively
+              setMyNonApproved(response.data.filter(item => !item.isApproved && isMine(item, user)).length);
           })
           .catch((e) => {
             console.log(e);

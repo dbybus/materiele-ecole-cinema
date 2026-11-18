@@ -59,8 +59,9 @@ function Reservation() {
 
     // Load on arrival, and again on every navigation: AddReservation navigates to /Reservation when it's
     // done or cancelled. That's this same page, so it doesn't remount; close the form and refresh instead.
+    // Other pages can open the wizard directly with history.push('/Reservation', { openWizard: true }).
     useEffect(() => {
-        setShowAddForm(false);
+        setShowAddForm(!!(location.state && location.state.openWizard));
         if (user) loadReservations();
     }, [user, location.key, loadReservations]);
 
