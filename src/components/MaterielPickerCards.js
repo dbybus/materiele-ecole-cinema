@@ -3,9 +3,8 @@ import { IconButton, InputAdornment, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import RemoveIcon from '@material-ui/icons/Remove';
 import SearchIcon from '@material-ui/icons/Search';
-import ModalImage from 'react-modal-image';
 import { labelFor } from './materiel/materielUtils';
-import { CategoryChip } from './materiel/MaterielDisplay';
+import { CategoryChip, MaterielThumb } from './materiel/MaterielDisplay';
 import { LIEUX } from '../constants/materiel';
 
 const PAGE_SIZE = 20;
@@ -67,9 +66,8 @@ export default function MaterielPickerCards({ items, onAdd, onRemove, filters, t
           return (
             <li key={item.id} className={`picker-card${qty > 0 ? ' is-selected' : ''}`}>
               <div className="picker-thumb">
-                {item.url_pic
-                  ? <ModalImage className="picker-img" small={item.url_pic} large={item.url_pic} alt={item.label} />
-                  : <div className="picker-img picker-img--empty" />}
+                {/* Same thumbnail as the Matériel page (category placeholder when there's no photo) */}
+                <MaterielThumb materiel={item} size="md" />
               </div>
 
               <div className="picker-body">

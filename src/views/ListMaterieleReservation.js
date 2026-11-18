@@ -4,17 +4,17 @@ import { Container } from 'react-bootstrap';
 import { IconButton } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import RemoveIcon from '@material-ui/icons/Remove';
-import ModalImage from 'react-modal-image';
 import MaterieleDataService from '../services/materiele.service';
 import Loading from '../components/loading';
 import MaterielPickerCards from '../components/MaterielPickerCards';
 import FilterSelect from '../components/materiel/FilterSelect';
-import { CategoryChip } from '../components/materiel/MaterielDisplay';
+import CategoryFilterChips from '../components/materiel/CategoryFilterChips';
+import { CategoryChip, MaterielThumb } from '../components/materiel/MaterielDisplay';
 import { tableIcons, localizationFr, chfCurrencySetting } from '../components/table/materialTableConfig';
 import {
   ALL, addToSelection, buildPickerRows, labelFor, matchesFilters, removeFromSelection,
 } from '../components/materiel/materielUtils';
-import { CATEGORIES, LIEUX } from '../constants/materiel';
+import { LIEUX } from '../constants/materiel';
 import { useAuth0 } from '../auth';
 import useIsMobile, { useIsCompact } from '../hooks/useIsMobile';
 import useFitPageSize from '../hooks/useFitPageSize';
@@ -78,10 +78,16 @@ function ListMaterieleReservation({
     if (allMateriele.length === 0) loadCatalog();
   }, [allMateriele.length, loadCatalog]);
 
-  // Availability, selected count and line total are derived, never stored on the rows
+  // Availability, selected count and line total are derived, never stored on the rows.
+  // Location filter first: the category chips count from that list (same behaviour as the Matériel page).
+  const rowsInLieu = useMemo(
+    () => buildPickerRows(allMateriele, materielReserve, materiel)
+      .filter((m) => matchesFilters(m, { categorie: ALL, lieu: filters.lieu })),
+    [allMateriele, materielReserve, materiel, filters.lieu]
+  );
   const rows = useMemo(
-    () => buildPickerRows(allMateriele, materielReserve, materiel).filter((m) => matchesFilters(m, filters)),
-    [allMateriele, materielReserve, materiel, filters]
+    () => rowsInLieu.filter((m) => matchesFilters(m, { categorie: filters.categorie, lieu: ALL })),
+    [rowsInLieu, filters.categorie]
   );
 
   // ---------- Selection ----------
@@ -99,9 +105,10 @@ function ListMaterieleReservation({
   const { containerRef, tableRef, pageSize, pageSizeOptions, onChangeRowsPerPage } =
     useFitPageSize({ data: rows, fallbackRowHeight: 64, bottomGap });
 
+  // Same filters as the Matériel page: category chips (with counts and icons) + location dropdown
   const filterControls = {
     categorie: (
-      <FilterSelect value={filters.categorie} options={CATEGORIES} allLabel="Toutes catégories"
+      <CategoryFilterChips materiels={rowsInLieu} value={filters.categorie}
         onChange={(categorie) => setFilters((f) => ({ ...f, categorie }))} />
     ),
     lieu: (
@@ -124,7 +131,7 @@ function ListMaterieleReservation({
         showSummary={false} // the wizard's action bar already shows the selection total
         onAdd={addOne}
         onRemove={removeOne}
-        filters={<>{filterControls.categorie}{filterControls.lieu}</>}
+        filters={<div>{filterControls.categorie}{filterControls.lieu}</div>}
       />
     );
   }
@@ -138,9 +145,8 @@ function ListMaterieleReservation({
     { title: 'Nom', field: 'label', cellStyle: { minWidth: nameWidth }, headerStyle: { minWidth: nameWidth } },
     {
       title: 'Image', field: 'url_pic', width: 90, sorting: false, searchable: false,
-      render: (row) => row.url_pic
-        ? <ModalImage className="mat-thumb mat-thumb--sm" small={row.url_pic} large={row.url_pic} alt={row.label} />
-        : null,
+      // Same thumbnail as the Matériel page (category placeholder when there's no photo)
+      render: (row) => <MaterielThumb materiel={row} />,
     },
     { title: 'Catégorie', field: 'categorie', width: 140, render: (row) => <CategoryChip categorie={row.categorie} /> },
     {
@@ -158,6 +164,8 @@ function ListMaterieleReservation({
     : 'Liste du matériel';
 
   return (
+    <>
+    {filterControls.categorie}
     <Container className="table-view" ref={containerRef}>
       <MaterialTable
         title={title}
@@ -168,7 +176,6 @@ function ListMaterieleReservation({
         data={rows}
         onChangeRowsPerPage={onChangeRowsPerPage}
         actions={[
-          { icon: () => filterControls.categorie, tooltip: 'Filtrer par catégorie', isFreeAction: true },
           { icon: () => filterControls.lieu, tooltip: 'Filtrer par lieu', isFreeAction: true },
         ]}
         options={{
@@ -183,6 +190,7 @@ function ListMaterieleReservation({
         }}
       />
     </Container>
+    </>
   );
 }
 

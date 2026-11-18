@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DateTimePickerComponent } from '@syncfusion/ej2-react-calendars';
 import ListMaterieleReservationModify from '../../views/ListMaterieleReservationModify';
 import ModalPopup from '../ModalPopup';
@@ -6,6 +6,26 @@ import ModalPopup from '../ModalPopup';
 const common = require('../../common');
 
 const DATE_FORMAT = 'dd/MM/yy HH:mm';
+
+// MUI dialogs, menus and snackbars use z-index 1300-1400.
+const BELOW_MUI = 1200;
+
+/**
+ * Syncfusion gives its editor a z-index above the highest one on the page when it opens: if a MUI
+ * snackbar (1400) is showing at that moment, the editor gets 1401 and our MUI "Modifier le matériel"
+ * dialog (1300) opens BEHIND it. While our dialog is open, put the editor (and its dark overlay)
+ * below the MUI layer. Raising our dialog instead would hide its own dropdown menus (also 1300).
+ * Returns a function that restores the original values.
+ */
+function lowerSchedulerEditor() {
+  const dialog = document.querySelector('.e-schedule-dialog.e-popup-open');
+  const container = dialog && dialog.closest('.e-dlg-container');
+  const overlay = container && container.querySelector('.e-dlg-overlay');
+  const elements = [[container, BELOW_MUI], [dialog, BELOW_MUI], [overlay, BELOW_MUI - 1]].filter(([el]) => el);
+  const previous = elements.map(([el]) => el.style.zIndex);
+  elements.forEach(([el, z]) => { el.style.zIndex = String(z); });
+  return () => elements.forEach(([el], i) => { el.style.zIndex = previous[i]; });
+}
 
 /** Label + field row. Syncfusion reads every element with class "e-field" (by name) when saving. */
 function Field({ label, children }) {
@@ -30,9 +50,20 @@ export default function ReservationEditor({ event, allReservations, onMaterielsC
   // Working copy edited in the dialog: "OK" applies it, "Annuler" throws it away
   const [draft, setDraft] = useState(null);
   const dialogOpen = draft !== null;
+  const restoreEditorRef = useRef(null);
 
-  const openDialog = () => setDraft(materiels);
-  const closeDialog = () => setDraft(null);
+  const openDialog = () => {
+    restoreEditorRef.current = lowerSchedulerEditor(); // so "Modifier le matériel" is always on top
+    setDraft(materiels);
+  };
+  const closeDialog = () => {
+    if (restoreEditorRef.current) restoreEditorRef.current();
+    restoreEditorRef.current = null;
+    setDraft(null);
+  };
+
+  // If the editor closes while our dialog is still open, don't leave its z-index lowered
+  useEffect(() => () => { if (restoreEditorRef.current) restoreEditorRef.current(); }, []);
 
   const confirmDialog = () => {
     setMateriels(draft);
